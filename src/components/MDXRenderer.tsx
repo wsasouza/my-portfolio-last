@@ -62,9 +62,15 @@ function safeLogObject(obj: any): any {
 const Image = (props: any) => {
   const { src, alt = '', caption, width, height, ...rest } = props;
   
-  return (
-    <figure className="my-8">
-      <div className="overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-800">
+  // Certifique-se de que src seja uma string válida
+  if (!src) {
+    console.error('Erro: Componente Image chamado sem o atributo src');
+    return null;
+  }
+  
+  try {
+    return (
+      <>
         <NextImage 
           src={src}
           alt={alt}
@@ -72,17 +78,20 @@ const Image = (props: any) => {
           height={height || 800}
           sizes="(min-width: 1280px) 36rem, (min-width: 1024px) 45vw, (min-width: 640px) 32rem, 95vw"
           quality={90}
-          className="w-full h-auto"
+          className="rounded-2xl my-8 w-full h-auto"
           {...rest}
         />
-      </div>
-      {caption && (
-        <figcaption className="mt-4 text-sm text-center text-zinc-500 dark:text-zinc-400">
-          {caption}
-        </figcaption>
-      )}
-    </figure>
-  );
+        {caption && (
+          <span className="block mt-2 text-sm text-center text-zinc-500 dark:text-zinc-400">
+            {caption}
+          </span>
+        )}
+      </>
+    );
+  } catch (error) {
+    console.error('Erro ao renderizar componente Image:', error, { props });
+    return <span className="text-red-500">Erro ao carregar imagem</span>;
+  }
 };
 
 // Wrapper para o componente Code para compatibilidade com MDX
@@ -326,10 +335,11 @@ export function MDXRenderer({ content, images = {} }: MDXRendererProps) {
           mdxOptions: {
             remarkPlugins: [remarkGfm],
             rehypePlugins: [
-              rehypeRaw, 
+              // rehypeRaw foi removido para evitar conflitos
               [rehypeSanitize, sanitizeSchema], 
               [rehypePrism, { ignoreMissing: true }]
             ],
+            development: process.env.NODE_ENV === 'development',
           },
           parseFrontmatter: false, // Desabilitar parsing de frontmatter para evitar que seja renderizado
         });
@@ -366,14 +376,18 @@ export function MDXRenderer({ content, images = {} }: MDXRendererProps) {
     processMDX();
   }, [content, images]);
 
-  // Componentes customizados para o MDX
-  const components: MDXComponents = {
-    Image,
-    img: Image, // Também mapeamos para img para compatibilidade
-    code: CodeWrapper,
-    pre: PreWrapper,
-    a: CustomLink, // Adicionar o componente de link personalizado
-    // Adicione outros componentes aqui conforme necessário
+  // Componentes customizados para o MDX - certifique-se de que todos são válidos
+  const components = {
+    // Componentes básicos
+    img: (props: any) => <Image {...props} />,
+    Image: (props: any) => <Image {...props} />,
+    
+    // Componentes para blocos de código
+    code: (props: any) => <CodeWrapper {...props} />,
+    pre: (props: any) => <PreWrapper {...props} />,
+    
+    // Links personalizados
+    a: (props: any) => <CustomLink {...props} />,
   };
 
   if (isLoading) {

@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import slugify from 'slugify';
+import useFirebaseStorage from '@/hooks/useFirebaseStorage';
+import { insertImageInEditor, insertNextImageInEditor } from '@/utils/image-editor';
 
 interface ArticleEditorProps {
   article?: {
@@ -16,6 +18,17 @@ interface ArticleEditorProps {
     slug?: string;
     imageUrls?: Record<string, string>;
   } | null;
+}
+
+interface ArticleData {
+  title: string;
+  description: string;
+  author: string;
+  date: string;
+  slug: string;
+  content: string;
+  imageUrls: Record<string, string>;
+  id?: string; // ID opcional para atualização
 }
 
 export default function ArticleEditor({ article = null }: ArticleEditorProps) {
@@ -31,6 +44,9 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [existingImages, setExistingImages] = useState<Record<string, string>>(article?.imageUrls || {});  
   const [imageObjectURLs, setImageObjectURLs] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<Record<string, string>>({});
+  const { uploadImage, uploadState } = useFirebaseStorage();
+  const contentTextAreaRef = useRef<HTMLTextAreaElement>(null);
   
   useEffect(() => {
     if (article) {
@@ -85,6 +101,33 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
     setContent(e.target.value);
   };
 
+  const uploadImagesToFirebase = async () => {
+    // Primeiro fazemos o upload das imagens para o Firebase Storage
+    const folderPath = article?.slug || slugify(title, { lower: true });
+    
+    const imageUploadPromises = images.map(async (img) => {
+      try {
+        // Upload da imagem para o Firebase Storage
+        const imageUrl = await uploadImage(img, `articles/${folderPath}`);
+        console.log(`Imagem ${img.name} enviada com sucesso: ${imageUrl}`);
+        return { name: img.name, url: imageUrl };
+      } catch (error) {
+        console.error(`Erro ao enviar imagem ${img.name}:`, error);
+        throw error;
+      }
+    });
+    
+    const uploadedImageResults = await Promise.all(imageUploadPromises);
+    
+    // Converter resultados para o formato de record
+    const uploadedImagesMap: Record<string, string> = {};
+    uploadedImageResults.forEach(({ name, url }) => {
+      uploadedImagesMap[name] = url;
+    });
+    
+    return uploadedImagesMap;
+  };
+
   const saveArticle = async () => {
     try {
       setIsLoading(true);
@@ -99,37 +142,39 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       const slug = article?.slug || slugify(title, { lower: true });
       console.log(`Slug gerado: ${slug}`);
       
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('description', description);
-      formData.append('author', author);
-      formData.append('date', date);
-      formData.append('slug', slug);
+      // Upload de imagens para o Firebase Storage
+      const uploadedImagesMap = images.length > 0 ? await uploadImagesToFirebase() : {};
+      
+      // Combinar imagens existentes com as novas imagens
+      const allImages = { ...existingImages, ...uploadedImagesMap };
+      
+      // Preparar dados do artigo
+      const articleData: ArticleData = {
+        title,
+        description,
+        author,
+        date,
+        slug,
+        content,
+        imageUrls: allImages,
+      };
       
       // Se estiver editando um artigo existente, adicione o ID do artigo
       if (article?.id) {
         console.log(`Editando artigo existente com ID: ${article.id}`);
-        formData.append('id', article.id);
+        articleData.id = article.id;
       } else {
         console.log('Criando novo artigo');
       }
-      formData.append('content', content);
       
-      // Adicionar imagens novas
-      console.log(`Adicionando ${images.length} imagens novas ao FormData`);
-      images.forEach((img, index) => {
-        console.log(`Anexando imagem ${index + 1}: ${img.name} (${img.size} bytes) ao FormData`);
-        formData.append('images', img);
-      });
-      
-      // Adicionar referências a imagens existentes
-      console.log(`Adicionando ${Object.keys(existingImages).length} imagens existentes`);
-      formData.append('existingImages', JSON.stringify(existingImages));
-      
-      console.log(`Enviando requisição ${article ? 'PUT' : 'POST'} para /api/articles`);
-      const response = await fetch(`/api/articles`, {
+      // Enviar dados do artigo para a API
+      console.log(`Enviando requisição ${article ? 'PUT' : 'POST'} para /api/articles-client`);
+      const response = await fetch(`/api/articles-client`, {
         method: article ? 'PUT' : 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(articleData),
       });
       
       const data = await response.json();
@@ -153,6 +198,46 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       imageObjectURLs.forEach(url => URL.revokeObjectURL(url));
     };
   }, [imageObjectURLs]);
+
+  // Renderizar progresso de upload
+  const renderUploadProgress = (filename: string) => {
+    const state = uploadState[filename];
+    if (!state || !state.isUploading) return null;
+    
+    return (
+      <div className="text-xs mt-1">
+        <div className="h-1 w-full bg-gray-200 rounded overflow-hidden">
+          <div
+            className="h-full bg-blue-500"
+            style={{ width: `${state.progress}%` }}
+          />
+        </div>
+        <span className="text-gray-500">{state.progress}%</span>
+      </div>
+    );
+  };
+
+  // Função para inserir imagem no editor (usando markdown puro)
+  const insertImageInContent = (filename: string, imageUrl: string) => {
+    const updatedContent = insertImageInEditor(
+      content,
+      filename,
+      imageUrl,
+      contentTextAreaRef.current
+    );
+    setContent(updatedContent);
+  };
+
+  // Função para inserir imagem no editor (usando componente Next.js Image)
+  const insertNextImageInContent = (filename: string, imageUrl: string) => {
+    const updatedContent = insertNextImageInEditor(
+      content,
+      filename,
+      imageUrl,
+      contentTextAreaRef.current
+    );
+    setContent(updatedContent);
+  };
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -235,6 +320,22 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
                         className="object-cover rounded"
                       />
                     </div>
+                    <div className="absolute flex space-x-1 -bottom-6 left-0 right-0">
+                      <button
+                        onClick={() => insertImageInContent(filename, url)}
+                        className="bg-green-500 text-white text-xs rounded px-1 py-0.5 hover:bg-green-600"
+                        title="Inserir como Markdown"
+                      >
+                        MD
+                      </button>
+                      <button
+                        onClick={() => insertNextImageInContent(filename, url)}
+                        className="bg-blue-500 text-white text-xs rounded px-1 py-0.5 hover:bg-blue-600"
+                        title="Inserir como Next Image"
+                      >
+                        Next
+                      </button>
+                    </div>
                     <button
                       onClick={() => removeExistingImage(filename)}
                       className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center"
@@ -266,6 +367,24 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
                         unoptimized
                       />
                     </div>
+                    {uploadState[img.name]?.url && (
+                      <div className="absolute flex space-x-1 -bottom-6 left-0 right-0">
+                        <button
+                          onClick={() => insertImageInContent(img.name, uploadState[img.name]?.url || '')}
+                          className="bg-green-500 text-white text-xs rounded px-1 py-0.5 hover:bg-green-600"
+                          title="Inserir como Markdown"
+                        >
+                          MD
+                        </button>
+                        <button
+                          onClick={() => insertNextImageInContent(img.name, uploadState[img.name]?.url || '')}
+                          className="bg-blue-500 text-white text-xs rounded px-1 py-0.5 hover:bg-blue-600"
+                          title="Inserir como Next Image"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
                     <button
                       onClick={() => removeImage(idx)}
                       className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center"
@@ -274,6 +393,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
                       &times;
                     </button>
                     <span className="text-xs mt-1 block truncate max-w-[80px]">{img.name}</span>
+                    {renderUploadProgress(img.name)}
                   </div>
                 ))}
               </div>
@@ -285,6 +405,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       <div className="mb-6">
         <label className="block mb-2">Conteúdo (MDX)</label>
         <textarea
+          ref={contentTextAreaRef}
           value={content}
           onChange={handleContentChange}
           className="w-full p-2 border rounded font-mono dark:bg-zinc-800 dark:border-zinc-700"
@@ -294,7 +415,9 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
         <div className="mt-4 text-sm text-zinc-500">
           <p>Dicas:</p>
           <ul className="list-disc pl-5">
-            <li>Use <code>{'<Image src={image1} alt="Descrição" />'}</code> para inserir imagens</li>
+            <li>Use <code>{'![Descrição da imagem](URL da imagem)'}</code> para inserir imagens usando Markdown</li>
+            <li>Use o botão <strong>MD</strong> para inserir imagens como Markdown</li>
+            <li>Use o botão <strong>Next</strong> para inserir imagens com o componente Image do Next.js</li>
             <li>Use <code>{'[Texto do link](https://exemplo.com)'}</code> para inserir links</li>
             <li>Use <code>{'<a href="https://exemplo.com" target="_blank">Link externo</a>'}</code> para links que abrem em nova aba</li>
             <li>Use ## para títulos de seção</li>

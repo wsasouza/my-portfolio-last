@@ -11,7 +11,7 @@ function getPublicStorageUrl(fileName: string): string {
     throw new Error('FIREBASE_PROJECT_ID não está definido no arquivo .env.local');
   }
   
-  // Construir URL para o bucket padrão do projeto
+  // Formato de URL pública do Firebase Storage
   return `https://storage.googleapis.com/${projectId}.appspot.com/${fileName}`;
 }
 
@@ -152,24 +152,31 @@ export async function POST(request: Request) {
     // Upload de cada imagem para o Firebase Storage
     for (const file of imageFiles) {
       try {
+        console.log(`Iniciando upload da imagem: ${file.name}, tamanho: ${file.size} bytes`);
         const fileBuffer = await file.arrayBuffer();
         const fileName = `articles/${slug}/${uuidv4()}-${file.name}`;
+        console.log(`Caminho do arquivo no Storage: ${fileName}`);
+        
         const fileRef = storage.file(fileName);
         
+        console.log(`Salvando arquivo no Firebase Storage...`);
         await fileRef.save(Buffer.from(fileBuffer), {
           metadata: {
             contentType: file.type,
           },
         });
         
+        console.log(`Arquivo salvo, tornando público...`);
         // Tornar o arquivo público
         await fileRef.makePublic();
         
         // Obter URL pública da imagem
         const publicUrl = getPublicStorageUrl(fileName);
+        console.log(`URL pública gerada: ${publicUrl}`);
         imageUrls[file.name] = publicUrl;
       } catch (error) {
         const uploadError = error as Error;
+        console.error(`Erro no upload: ${uploadError.message}`);
         throw new Error(`Falha no upload da imagem ${file.name}: ${uploadError.message}`);
       }
     }
@@ -233,26 +240,36 @@ export async function PUT(request: Request) {
     const imageFiles = formData.getAll('images') as File[];
     const imageUrls = { ...existingImageUrls };
     
+    console.log(`PUT: Processando ${imageFiles.length} novas imagens`);
+    console.log(`PUT: Já existem ${Object.keys(existingImageUrls).length} imagens`);
+    
     for (const file of imageFiles) {
       try {
+        console.log(`PUT: Iniciando upload da imagem: ${file.name}, tamanho: ${file.size} bytes`);
         const fileBuffer = await file.arrayBuffer();
         const fileName = `articles/${slug}/${uuidv4()}-${file.name}`;
+        console.log(`PUT: Caminho do arquivo no Storage: ${fileName}`);
+        
         const fileRef = storage.file(fileName);
         
+        console.log(`PUT: Salvando arquivo no Firebase Storage...`);
         await fileRef.save(Buffer.from(fileBuffer), {
           metadata: {
             contentType: file.type,
           },
         });
         
+        console.log(`PUT: Arquivo salvo, tornando público...`);
         // Tornar o arquivo público
         await fileRef.makePublic();
         
         // Obter URL pública da imagem
         const publicUrl = getPublicStorageUrl(fileName);
+        console.log(`PUT: URL pública gerada: ${publicUrl}`);
         imageUrls[file.name] = publicUrl;
       } catch (error) {
         const uploadError = error as Error;
+        console.error(`PUT: Erro no upload: ${uploadError.message}`);
         throw new Error(`Falha no upload da imagem ${file.name}: ${uploadError.message}`);
       }
     }

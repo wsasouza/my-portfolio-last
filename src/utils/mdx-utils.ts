@@ -87,22 +87,41 @@ export function normalizeMDXContent(content: string): string {
 export function processImageReferences(content: string, images: Record<string, string>): string {
   let processedContent = content;
   
-  // Para cada imagem no dicionário
-  Object.entries(images).forEach(([filename, url]) => {
-    const baseFilename = filename.split('.')[0];
-    
-    // Substituir os placeholders __IMAGE_XXX__ por URLs reais
-    processedContent = processedContent.replace(
-      new RegExp(`__IMAGE_${baseFilename}__`, 'g'),
-      url
-    );
-    
-    // Substituir as linhas de importação por comentários
-    processedContent = processedContent.replace(
-      new RegExp(`import ${baseFilename} from .*\\n`, 'g'),
-      `{/* Image: ${filename} imported from ${url} */}\n`
-    );
-  });
+  try {
+    // Para cada imagem no dicionário
+    Object.entries(images).forEach(([filename, url]) => {
+      const baseFilename = filename.split('.')[0];
+      
+      // 1. Substituir os placeholders __IMAGE_XXX__ por URLs reais
+      processedContent = processedContent.replace(
+        new RegExp(`__IMAGE_${baseFilename}__`, 'g'),
+        url
+      );
+      
+      // 2. Substituir a sintaxe de importação e variáveis por markdown direto
+      // Exemplo: <Image src={imageName} ... /> -> ![Alt text](URL)
+      const varRegex = new RegExp(`<Image\\s+src=\\{${baseFilename}(Img)?\\}([^>]*)>`, 'g');
+      processedContent = processedContent.replace(
+        varRegex,
+        `![${filename}](${url})`
+      );
+      
+      // 3. Substituir as linhas de importação por comentários
+      processedContent = processedContent.replace(
+        new RegExp(`import ${baseFilename}(Img)? from .*\\n`, 'g'),
+        `{/* Image: ${filename} imported from ${url} */}\n`
+      );
+      
+      // 4. Remover declarações de variáveis com URLs
+      processedContent = processedContent.replace(
+        new RegExp(`(export )?const ${baseFilename}(Img)? = ["']${url}["'];?\\n?`, 'g'),
+        ''
+      );
+    });
+  } catch (error) {
+    console.error('Erro ao processar referências de imagens:', error);
+    // Em caso de erro, retornar o conteúdo original
+  }
   
   return processedContent;
 }
