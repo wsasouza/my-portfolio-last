@@ -2,9 +2,18 @@ import { type Metadata } from 'next'
 
 import { Card } from '@/components/Card'
 import { SimpleLayout } from '@/components/SimpleLayout'
+import { Breadcrumb } from '@/components/Breadcrumb'
 import { type ArticleWithSlug, getPaginatedArticles } from '@/lib/articles'
 import { formatDate } from '@/lib/formatDate'
 import { Pagination } from '@/components/Pagination'
+
+// Configuração do breadcrumb para a página de artigos
+const breadcrumbItems = [
+  {
+    label: 'Artigos',
+    href: '/artigos',
+  }
+]
 
 function Article({ article }: { article: ArticleWithSlug }) {
   return (
@@ -63,6 +72,11 @@ export default async function ArticlesIndex({ searchParams }: ArticlesPageProps)
       title="Escrevendo sobre design de software, desenvolvimento, e tecnologia."
       intro="Meus pensamentos sobre programação, design, liderança, e mais, coletados em ordem cronológica."
     >
+      {/* Breadcrumb */}
+      <div className="mb-8">
+        <Breadcrumb items={breadcrumbItems} />
+      </div>
+      
       <div className="md:border-l md:border-zinc-100 md:pl-6 md:dark:border-zinc-700/40">
         <div className="flex max-w-3xl flex-col space-y-16">
           {articles.map((article) => (

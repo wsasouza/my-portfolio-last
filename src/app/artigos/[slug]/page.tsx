@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getArticleBySlug } from '@/lib/articles';
 import { Metadata } from 'next';
 import { Prose } from '@/components/Prose';
+import { Breadcrumb } from '@/components/Breadcrumb';
 import { MDXRenderer } from '@/components/MDXRenderer';
 import { debugMDXContent } from '@/utils/debug-mdx';
 
@@ -37,6 +38,18 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   // Extrair o conteúdo do artigo do MDX armazenado
   const content = article.content || '';
   
+  // Configuração do breadcrumb
+  const breadcrumbItems = [
+    {
+      label: 'Artigos',
+      href: '/artigos',
+    },
+    {
+      label: article.title,
+      href: `/artigos/${article.slug}`,
+    },
+  ];
+  
   // Debug do conteúdo MDX
   if (process.env.NODE_ENV !== 'production') {
     const debug = debugMDXContent(content);
@@ -61,6 +74,11 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
       <div className="py-16">
+        {/* Breadcrumb */}
+        <div className="mb-8">
+          <Breadcrumb items={breadcrumbItems} />
+        </div>
+        
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
           {article.title}
         </h1>
