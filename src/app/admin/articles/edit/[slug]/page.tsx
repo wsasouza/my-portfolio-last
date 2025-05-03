@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import ArticleEditor from '@/components/ArticleEditor';
+import { SimpleLayout } from '@/components/SimpleLayout';
 
 export default function EditArticlePage() {
   const params = useParams();
@@ -50,5 +51,5 @@ export default function EditArticlePage() {
     );
   }
 
-  return <ArticleEditor article={article} />;
+  return <SimpleLayout title="Edit Article" intro="Edit a article"><ArticleEditor article={article} /></SimpleLayout>;
 } 

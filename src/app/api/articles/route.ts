@@ -79,10 +79,29 @@ date: "${date}"
   return yamlFrontmatter + processedContent;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Obter parâmetros de consulta
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') || '1', 10);
+    const limit = parseInt(url.searchParams.get('limit') || '5', 10);
+    
+    // Validar parâmetros
+    const validatedLimit = Math.min(Math.max(1, limit), 20); // Limite entre 1 e 20
+    const validatedPage = Math.max(1, page);
+    
+    // Calcular offset para paginação
+    const offset = (validatedPage - 1) * validatedLimit;
+    
+    // Obter a contagem total de artigos
+    const countSnapshot = await db.collection('articles').count().get();
+    const totalCount = countSnapshot.data().count;
+    
+    // Buscar artigos paginados
     const articlesSnapshot = await db.collection('articles')
       .orderBy('date', 'desc')
+      .limit(validatedLimit)
+      .offset(offset)
       .get();
     
     const articles = articlesSnapshot.docs.map(doc => {
@@ -95,7 +114,19 @@ export async function GET() {
       };
     });
     
-    return NextResponse.json({ articles });
+    // Calcular se há mais artigos
+    const hasMore = offset + articles.length < totalCount;
+    
+    return NextResponse.json({
+      articles,
+      pagination: {
+        page: validatedPage,
+        limit: validatedLimit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / validatedLimit),
+        hasMore
+      }
+    });
   } catch (error) {
     return NextResponse.json(
       { error: 'Falha ao buscar artigos' },

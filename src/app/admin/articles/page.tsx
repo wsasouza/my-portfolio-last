@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatDate } from '@/lib/formatDate';
 import { SimpleLayout } from '@/components/SimpleLayout';
+import { Pagination } from '@/components/Pagination';
+import { useSearchParams } from 'next/navigation';
 
 interface Article {
   id: string; // ID do documento
@@ -15,15 +17,34 @@ interface Article {
   date: string;
 }
 
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
 export default function AdminArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 5,
+    totalCount: 0,
+    totalPages: 1,
+    hasMore: false
+  });
+  
+  const searchParams = useSearchParams();
+  const currentPage = parseInt(searchParams.get('pagina') || '1', 10);
 
   useEffect(() => {
     const fetchArticles = async () => {
       try {
-        const response = await fetch('/api/articles');
+        setIsLoading(true);
+        const response = await fetch(`/api/articles?page=${currentPage}&limit=5`);
         const data = await response.json();
         
         if (!response.ok) {
@@ -31,6 +52,7 @@ export default function AdminArticlesPage() {
         }
         
         setArticles(data.articles);
+        setPagination(data.pagination);
       } catch (err: any) {
         setError(err.message);
         console.error('Erro ao buscar artigos:', err);
@@ -40,7 +62,7 @@ export default function AdminArticlesPage() {
     };
     
     fetchArticles();
-  }, []);
+  }, [currentPage]);
 
   const handleDeleteArticle = async (slug: string, id: string) => {
     if (!confirm('Tem certeza que deseja excluir este artigo? Esta ação não pode ser desfeita.')) {
@@ -61,6 +83,13 @@ export default function AdminArticlesPage() {
       
       // Atualizar a lista após excluir
       setArticles(articles.filter(article => article.id !== id));
+      
+      // Atualizar contagem total de artigos
+      setPagination(prev => ({
+        ...prev,
+        totalCount: prev.totalCount - 1,
+        totalPages: Math.ceil((prev.totalCount - 1) / prev.limit)
+      }));
     } catch (err: any) {
       alert(`Erro ao excluir artigo: ${err.message}`);
       console.error('Erro ao excluir artigo:', err);
@@ -69,8 +98,8 @@ export default function AdminArticlesPage() {
 
   return (
     <SimpleLayout
-      title="I’ve spoken at events all around the world and been interviewed for many podcasts."
-      intro="One of my favorite ways to share my ideas is live on stage, where there’s so much more communication bandwidth than there is in writing, and I love podcast interviews because they give me the opportunity to answer questions instead of just present my opinions."
+      title="Gerenciamento de Artigos"
+      intro="Aqui você pode criar, editar e excluir artigos do blog."
     >      
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-8">
@@ -164,6 +193,12 @@ export default function AdminArticlesPage() {
           </table>
         </div>
       )}
+      
+      {/* Componente de paginação */}
+      <Pagination 
+        currentPage={pagination.page} 
+        totalPages={pagination.totalPages} 
+      />
     </div>
     </SimpleLayout>
   );

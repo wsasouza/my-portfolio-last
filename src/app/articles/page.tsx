@@ -52,11 +52,11 @@ export default async function ArticlesIndex({ searchParams }: ArticlesPageProps)
     ? parseInt(pageParam, 10) || 1 
     : 1;
   
-  // Obter artigos paginados
-  const { articles, totalCount, hasMore } = await getPaginatedArticles(currentPage, 8);
+  // Obter artigos paginados (5 por página)
+  const { articles, totalCount, hasMore } = await getPaginatedArticles(currentPage, 5);
   
   // Calcular o número total de páginas
-  const totalPages = Math.ceil(totalCount / 8);
+  const totalPages = Math.ceil(totalCount / 5);
 
   return (
     <SimpleLayout
