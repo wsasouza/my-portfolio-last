@@ -30,8 +30,8 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [existingImages, setExistingImages] = useState<Record<string, string>>(article?.imageUrls || {});
-  const [markdownEditorValue, setMarkdownEditorValue] = useState('');
+  const [existingImages, setExistingImages] = useState<Record<string, string>>(article?.imageUrls || {});  
+  const [imageObjectURLs, setImageObjectURLs] = useState<string[]>([]);
   
   useEffect(() => {
     if (article) {
@@ -58,10 +58,19 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       }
     });
     
+    // Criar URLs para preview das imagens
+    const newImageURLs = files.map(file => URL.createObjectURL(file));
+    setImageObjectURLs(prev => [...prev, ...newImageURLs]);
+    
     setImages((prev) => [...prev, ...files]);
   };
 
   const removeImage = (index: number) => {
+    // Revogar URL do objeto quando remover a imagem
+    if (imageObjectURLs[index]) {
+      URL.revokeObjectURL(imageObjectURLs[index]);
+    }
+    setImageObjectURLs(prev => prev.filter((_, i) => i !== index));
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -139,6 +148,13 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
     }
   };
 
+  // Limpar as URLs de objeto ao desmontar o componente
+  useEffect(() => {
+    return () => {
+      imageObjectURLs.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [imageObjectURLs]);
+
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-2xl font-bold mb-6">
@@ -212,11 +228,14 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
               <div className="flex flex-wrap gap-2">
                 {Object.entries(existingImages).map(([filename, url]) => (
                   <div key={filename} className="relative">
-                    <img
-                      src={url}
-                      alt={filename}
-                      className="h-20 w-20 object-cover rounded"
-                    />
+                    <div className="h-20 w-20 relative">
+                      <Image
+                        src={url}
+                        alt={filename}
+                        fill
+                        className="object-cover rounded"
+                      />
+                    </div>
                     <button
                       onClick={() => removeExistingImage(filename)}
                       className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center"
@@ -238,11 +257,16 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
               <div className="flex flex-wrap gap-2">
                 {images.map((img, idx) => (
                   <div key={idx} className="relative">
-                    <img
-                      src={URL.createObjectURL(img)}
-                      alt={img.name}
-                      className="h-20 w-20 object-cover rounded"
-                    />
+                    {/* Usar URL segura para preview */}
+                    <div className="h-20 w-20 relative">
+                      <Image
+                        src={imageObjectURLs[idx] || ''}
+                        alt={img.name}
+                        fill
+                        className="object-cover rounded"
+                        unoptimized
+                      />
+                    </div>
                     <button
                       onClick={() => removeImage(idx)}
                       className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center"

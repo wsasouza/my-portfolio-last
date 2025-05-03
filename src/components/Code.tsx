@@ -229,7 +229,7 @@ export function Code(props: CodeProps) {
       
       {/* Conteúdo do código */}
       {hasHighlight ? (
-        <div className="overflow-x-auto p-4">
+        <div className="overflow-x-auto p-4 code-block">
           {codeLines.map((line, i) => (
             <div 
               key={i} 
@@ -246,11 +246,11 @@ export function Code(props: CodeProps) {
         <pre
           ref={textRef}
           className={clsx(
-            'overflow-x-auto p-4 text-sm font-mono',
+            'overflow-x-auto p-4 text-sm font-mono code-block',
             className
           )}
         >
-          {codeContent || ''}
+          <code className={className}>{codeContent}</code>
         </pre>
       )}
     </div>

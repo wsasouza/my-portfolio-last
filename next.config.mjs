@@ -10,6 +10,16 @@ const nextConfig = {
       '/articles/*': ['./src/app/articles/**/*.mdx'],
     },
   },
+  images: {
+    domains: ['storage.googleapis.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.googleapis.com',
+        pathname: '/**',
+      }
+    ],
+  },
 }
 
 const withMDX = nextMDX({

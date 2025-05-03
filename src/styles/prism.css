@@ -1,47 +1,156 @@
+/**
+ * Prism.js Dracula Theme
+ * Importado diretamente do tema Dracula
+ */
+
+@import url('https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css');
+
+/* Customizações adicionais para melhorar o tema padrão */
+
+/* Estilo base para blocos de código */
+.code-block {
+  background-color: #282a36; /* Fundo escuro */
+  color: #f8f8f2; /* Texto claro */
+  border-radius: 0.375rem;
+}
+
+/* Ajustes para tornar o código mais legível */
 pre[class*='language-'] {
-  color: var(--color-zinc-100);
+  padding: 1rem;
+  margin: 0.5rem 0;
+  overflow: auto;
+  border-radius: 0.375rem;
+  background-color: #282a36 !important; /* Sobrescrever o tema importado */
 }
 
-.token.tag,
-.token.class-name,
-.token.selector,
-.token.selector .class,
-.token.selector.class,
-.token.function {
-  color: var(--color-pink-400);
+code[class*='language-'] {
+  background-color: transparent;
 }
 
-.token.attr-name,
-.token.keyword,
-.token.rule,
-.token.pseudo-class,
-.token.important {
-  color: var(--color-zinc-300);
+/* Melhorias para visualização de código */
+:not(pre) > code[class*='language-'] {
+  padding: 0.2em 0.4em;
+  border-radius: 0.3em;
+  background: rgba(40, 42, 54, 0.75);
+  white-space: normal;
 }
 
-.token.module {
-  color: var(--color-pink-400);
+/* Destaque para linhas */
+.rehype-code-title {
+  display: inline-block;
+  background-color: #44475a;
+  color: #f8f8f2;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem 0.25rem 0 0;
+  margin-bottom: -1px;
 }
 
-.token.attr-value,
-.token.class,
-.token.string,
-.token.property {
-  color: var(--color-teal-300);
+.line-highlight {
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.token.punctuation,
-.token.attr-equals {
-  color: var(--color-zinc-500);
-}
-
-.token.unit,
-.language-css .token.function {
-  color: var(--color-sky-200);
-}
-
+/* Tokens e elementos */
 .token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #6272a4; /* Azul acinzentado para comentários */
+}
+
+.token.punctuation {
+  color: #f8f8f2; /* Branco */
+}
+
+.token.namespace {
+  opacity: 0.7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #ff79c6; /* Rosa */
+}
+
+.token.boolean,
+.token.number {
+  color: #bd93f9; /* Roxo */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #50fa7b; /* Verde */
+}
+
 .token.operator,
-.token.combinator {
-  color: var(--color-zinc-400);
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #f8f8f2; /* Branco */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #8be9fd; /* Azul claro */
+}
+
+.token.function,
+.token.class-name {
+  color: #ffb86c; /* Laranja */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #f1fa8c; /* Amarelo */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+/* Destaque específico para linguagens */
+.language-css .token.property {
+  color: #8be9fd; /* Azul claro */
+}
+
+.language-json .token.property {
+  color: #ff79c6; /* Rosa */
+}
+
+.language-jsx .token.keyword,
+.language-tsx .token.keyword {
+  color: #ff79c6; /* Rosa */
+}
+
+/* Melhoria para seleção de código */
+pre[class*='language-']::-moz-selection,
+pre[class*='language-'] ::-moz-selection,
+code[class*='language-']::-moz-selection,
+code[class*='language-'] ::-moz-selection {
+  background: #44475a; /* Roxo escuro */
+}
+
+pre[class*='language-']::selection,
+pre[class*='language-'] ::selection,
+code[class*='language-']::selection,
+code[class*='language-'] ::selection {
+  background: #44475a; /* Roxo escuro */
 }
