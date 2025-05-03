@@ -12,7 +12,6 @@ export interface Article {
 
 export interface ArticleWithSlug extends Article {
   id: string; // ID do documento
-  articleId: string; // ID do artigo (mesmo que o ID do documento)
   slug: string; // slug para URLs amigáveis
 }
 
@@ -29,7 +28,8 @@ export async function getAllArticles(): Promise<ArticleWithSlug[]> {
       .get();
     
     const articles = articlesSnapshot.docs.map((doc: DocumentData) => ({
-      slug: doc.id,
+      id: doc.id,
+      slug: doc.data().slug,
       ...doc.data(),
     })) as ArticleWithSlug[];
     
@@ -59,7 +59,6 @@ export async function getPaginatedArticles(page: number = 1, limit: number = 5):
     
     const articles = articlesSnapshot.docs.map((doc: DocumentData) => ({
       id: doc.id, // ID do documento
-      articleId: doc.id, // ID do artigo
       slug: doc.data().slug, // Usar o slug do documento
       ...doc.data(),
     })) as ArticleWithSlug[];
@@ -97,7 +96,6 @@ export async function getArticleBySlug(slug: string): Promise<ArticleWithSlug | 
     
     return {
       id: articleDoc.id, // ID do documento
-      articleId: articleDoc.id, // ID do artigo (mesmo que o ID do documento)
       ...articleDoc.data(),
     } as ArticleWithSlug;
   } catch (error) {

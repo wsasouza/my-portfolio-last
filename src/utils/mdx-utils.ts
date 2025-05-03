@@ -53,6 +53,23 @@ export function normalizeMDXContent(content: string): string {
         return `<Image src="__IMAGE_${importName}__"${rest}>`;
       }
     );
+    
+    // Normalizar links HTML para garantir formatação correta
+    // Adicionar target="_blank" e rel="noopener noreferrer" para links externos que não os tenham
+    normalizedContent = normalizedContent.replace(
+      /<a\s+href="(https?:\/\/[^"]+)"([^>]*)>/g,
+      (match, url, attrs) => {
+        // Verificar se já tem target e rel
+        if (!attrs.includes('target="_blank"')) {
+          attrs = attrs ? `${attrs} target="_blank"` : ` target="_blank"`;
+        }
+        if (!attrs.includes('rel="')) {
+          attrs = attrs ? `${attrs} rel="noopener noreferrer"` : ` rel="noopener noreferrer"`;
+        }
+        return `<a href="${url}"${attrs}>`;
+      }
+    );
+    
   } catch (error) {
     console.error('Erro ao normalizar conteúdo MDX:', error);
     // Em caso de erro, retornar o conteúdo original em vez de quebrar completamente

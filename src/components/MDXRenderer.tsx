@@ -5,7 +5,7 @@ import { MDXRemote, MDXRemoteSerializeResult } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
 import rehypePrism from '@mapbox/rehype-prism';
 import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
 import { Prose } from '@/components/Prose';
 import NextImage from 'next/image';
@@ -111,6 +111,44 @@ const PreWrapper = (props: any) => {
     });
   }
   return <CodeBlock {...props} />;
+};
+
+// Componente Link personalizado para MDX
+const CustomLink = (props: any) => {
+  const { href, children, ...rest } = props;
+  
+  // Verificar se é um link externo
+  const isExternal = href && (
+    href.startsWith('http://') || 
+    href.startsWith('https://') || 
+    href.startsWith('//') ||
+    href.startsWith('www.')
+  );
+  
+  if (isExternal) {
+    return (
+      <a 
+        href={href} 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        className="text-blue-600 dark:text-blue-400 hover:underline"
+        {...rest}
+      >
+        {children}
+      </a>
+    );
+  }
+  
+  // Link interno
+  return (
+    <a 
+      href={href} 
+      className="text-blue-600 dark:text-blue-400 hover:underline"
+      {...rest}
+    >
+      {children}
+    </a>
+  );
 };
 
 interface MDXRendererProps {
@@ -270,12 +308,26 @@ export function MDXRenderer({ content, images = {} }: MDXRendererProps) {
         
         // Etapa 4: Serializar o conteúdo processado para MDX
         console.log('Serializando conteúdo MDX...');
+        
+        // Configuração personalizada do sanitizador para permitir links e seus atributos
+        const sanitizeSchema = {
+          ...defaultSchema,
+          attributes: {
+            ...defaultSchema.attributes,
+            a: [
+              ...(defaultSchema.attributes?.a || []),
+              // Permitir atributos para links externos
+              'target', 'rel'
+            ]
+          }
+        };
+        
         const mdxSource = await serialize(contentWithImages, {
           mdxOptions: {
             remarkPlugins: [remarkGfm],
             rehypePlugins: [
               rehypeRaw, 
-              rehypeSanitize, 
+              [rehypeSanitize, sanitizeSchema], 
               [rehypePrism, { ignoreMissing: true }]
             ],
           },
@@ -320,6 +372,7 @@ export function MDXRenderer({ content, images = {} }: MDXRendererProps) {
     img: Image, // Também mapeamos para img para compatibilidade
     code: CodeWrapper,
     pre: PreWrapper,
+    a: CustomLink, // Adicionar o componente de link personalizado
     // Adicione outros componentes aqui conforme necessário
   };
 

@@ -105,7 +105,7 @@ export default function AdminArticlesPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">Gerenciar Artigos</h1>
         <Link 
-          href="/admin/articles/new" 
+          href="/admin/gerenciar-artigos/novo" 
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           Novo Artigo
@@ -124,73 +124,77 @@ export default function AdminArticlesPage() {
         </div>
       ) : (
         <div className="bg-white dark:bg-zinc-800 rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
-            <thead className="bg-gray-50 dark:bg-zinc-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider">
-                  Título
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider">
-                  Autor
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider">
-                  Data
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-zinc-700">
-              {articles.length === 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
+              <thead className="bg-gray-50 dark:bg-zinc-700">
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-gray-500 dark:text-zinc-400">
-                    Nenhum artigo encontrado.
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider">
+                    Título
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider">
+                    Autor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider">
+                    Data
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider w-[200px]">
+                    Ações
+                  </th>
                 </tr>
-              ) : (
-                articles.map((article) => (
-                  <tr key={article.slug}>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {article.title}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-zinc-400 truncate max-w-md">
-                        {article.description}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
-                      {article.author}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
-                      {formatDate(article.date)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link
-                        href={`/admin/articles/edit/${article.slug}`}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-900 mr-4"
-                      >
-                        Editar
-                      </Link>
-                      <Link
-                        href={`/articles/${article.slug}`}
-                        className="text-green-600 dark:text-green-400 hover:text-green-900 mr-4"
-                        target="_blank"
-                      >
-                        Visualizar
-                      </Link>
-                      <button
-                        onClick={() => handleDeleteArticle(article.slug, article.id)}
-                        className="text-red-600 dark:text-red-400 hover:text-red-900"
-                      >
-                        Excluir
-                      </button>
+              </thead>
+              <tbody className="bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-zinc-700">
+                {articles.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-4 text-center text-gray-500 dark:text-zinc-400">
+                      Nenhum artigo encontrado.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  articles.map((article) => (
+                    <tr key={article.slug}>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {article.title}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-zinc-400 line-clamp-2 max-w-[300px]">
+                          {article.description}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
+                        {article.author}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
+                        {formatDate(article.date)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex flex-wrap justify-end gap-3">
+                          <Link
+                            href={`/admin/gerenciar-artigos/editar/${article.slug}`}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-900"
+                          >
+                            Editar
+                          </Link>
+                          <Link
+                            href={`/artigos/${article.slug}`}
+                            className="text-green-600 dark:text-green-400 hover:text-green-900"
+                            target="_blank"
+                          >
+                            Visualizar
+                          </Link>
+                          <button
+                            onClick={() => handleDeleteArticle(article.slug, article.id)}
+                            className="text-red-600 dark:text-red-400 hover:text-red-900"
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       

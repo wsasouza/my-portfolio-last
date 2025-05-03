@@ -108,7 +108,6 @@ export async function GET(request: Request) {
       const data = doc.data();
       return {
         id: doc.id, // ID do documento
-        articleId: doc.id, // ID do artigo (mesmo que o ID do documento)
         slug: data.slug, // slug para URLs amigáveis
         ...data,
       };
@@ -187,7 +186,7 @@ export async function POST(request: Request) {
     
     // Gerar ID automático no Firestore
     const articleRef = db.collection('articles').doc();
-    const newArticleId = articleRef.id;
+    const documentId = articleRef.id;
     
     // Salvar o artigo no Firestore com ID gerado automaticamente
     await articleRef.set({
@@ -196,13 +195,12 @@ export async function POST(request: Request) {
       author,
       date,
       slug, // mantemos o slug para URLs amigáveis
-      articleId: newArticleId, // armazenamos o ID gerado
       content: mdxContent,
       imageUrls,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     
-    return NextResponse.json({ success: true, slug, articleId: newArticleId });
+    return NextResponse.json({ success: true, slug, id: documentId });
   } catch (error) {
     return NextResponse.json(
       { error: 'Falha ao salvar o artigo' },
@@ -215,7 +213,7 @@ export async function PUT(request: Request) {
   try {
     const formData = await request.formData();
     
-    const articleId = formData.get('articleId') as string; // ID do documento
+    const id = formData.get('id') as string; // ID do documento
     const slug = formData.get('slug') as string;
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
@@ -270,7 +268,7 @@ export async function PUT(request: Request) {
     });
     
     // Atualizar o artigo no Firestore usando o ID do documento
-    await db.collection('articles').doc(articleId).update({
+    await db.collection('articles').doc(id).update({
       title,
       description,
       author,
@@ -281,7 +279,7 @@ export async function PUT(request: Request) {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     
-    return NextResponse.json({ success: true, slug, articleId });
+    return NextResponse.json({ success: true, slug, id });
   } catch (error) {
     return NextResponse.json(
       { error: 'Falha ao atualizar o artigo' },

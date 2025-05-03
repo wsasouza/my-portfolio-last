@@ -8,7 +8,6 @@ import slugify from 'slugify';
 interface ArticleEditorProps {
   article?: {
     id?: string; // ID do documento do Firestore
-    articleId?: string; // ID do artigo (mesmo que o ID do documento)
     title?: string;
     description?: string;
     author?: string;
@@ -110,7 +109,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       // Se estiver editando um artigo existente, adicione o ID do artigo
       if (article?.id) {
         console.log(`Editando artigo existente com ID: ${article.id}`);
-        formData.append('articleId', article.id);
+        formData.append('id', article.id);
       } else {
         console.log('Criando novo artigo');
       }
@@ -139,7 +138,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
         throw new Error(data.error || 'Erro ao salvar artigo');
       }
       
-      router.push('/admin/articles');
+      router.push('/admin/gerenciar-artigos');
     } catch (err: any) {
       setError(err.message);
       console.error('Erro ao salvar artigo:', err);
@@ -296,6 +295,8 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
           <p>Dicas:</p>
           <ul className="list-disc pl-5">
             <li>Use <code>{'<Image src={image1} alt="Descrição" />'}</code> para inserir imagens</li>
+            <li>Use <code>{'[Texto do link](https://exemplo.com)'}</code> para inserir links</li>
+            <li>Use <code>{'<a href="https://exemplo.com" target="_blank">Link externo</a>'}</code> para links que abrem em nova aba</li>
             <li>Use ## para títulos de seção</li>
             <li>Use **texto** para negrito</li>
             <li>Use *texto* para itálico</li>
@@ -305,7 +306,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       
       <div className="flex justify-end">
         <button
-          onClick={() => router.push('/admin/articles')}
+          onClick={() => router.push('/admin/gerenciar-artigos')}
           className="px-4 py-2 mr-2 bg-zinc-200 rounded dark:bg-zinc-700"
           disabled={isLoading}
         >
