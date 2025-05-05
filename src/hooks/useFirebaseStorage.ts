@@ -20,9 +20,8 @@ export default function useFirebaseStorage() {
         return;
       }
 
-      const fileId = file.name;
+      const fileId = file.name;      
       
-      // Atualizar estado para este arquivo
       setUploadState(prev => ({
         ...prev,
         [fileId]: {
@@ -33,19 +32,15 @@ export default function useFirebaseStorage() {
         }
       }));
 
-      // Gerar nome de arquivo único
       const uniqueFileName = `${uuidv4()}-${file.name}`;
-      // Caminho no Storage
+      
       const storageRef = ref(storage, `${folder}/${uniqueFileName}`);
       
-      // Iniciar upload
       const uploadTask = uploadBytesResumable(storageRef, file);
 
-      // Monitorar progresso
       uploadTask.on(
         'state_changed',
-        (snapshot) => {
-          // Atualizar progresso
+        (snapshot) => {          
           const progress = Math.round(
             (snapshot.bytesTransferred / snapshot.totalBytes) * 100
           );
@@ -58,8 +53,7 @@ export default function useFirebaseStorage() {
             }
           }));
         },
-        (error) => {
-          // Tratar erro
+        (error) => {          
           setUploadState(prev => ({
             ...prev,
             [fileId]: {
@@ -71,8 +65,7 @@ export default function useFirebaseStorage() {
           
           reject(error);
         },
-        async () => {
-          // Upload completo, obter URL
+        async () => {          
           try {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
             

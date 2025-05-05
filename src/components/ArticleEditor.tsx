@@ -9,7 +9,7 @@ import { insertImageInEditor, insertNextImageInEditor } from '@/utils/image-edit
 
 interface ArticleEditorProps {
   article?: {
-    id?: string; // ID do documento do Firestore
+    id?: string; 
     title?: string;
     description?: string;
     author?: string;
@@ -28,7 +28,7 @@ interface ArticleData {
   slug: string;
   content: string;
   imageUrls: Record<string, string>;
-  id?: string; // ID opcional para atualização
+  id?: string; 
 }
 
 export default function ArticleEditor({ article = null }: ArticleEditorProps) {
@@ -65,7 +65,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
     const files = Array.from(e.target.files);
     console.log(`Selecionado ${files.length} arquivo(s) de imagem`);
     
-    // Verificar se os arquivos são válidos
+    
     files.forEach((file, index) => {
       console.log(`Arquivo ${index + 1}: ${file.name}, tipo: ${file.type}, tamanho: ${file.size} bytes`);
       if (!file.type.startsWith('image/')) {
@@ -73,15 +73,14 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       }
     });
     
-    // Criar URLs para preview das imagens
+    
     const newImageURLs = files.map(file => URL.createObjectURL(file));
     setImageObjectURLs(prev => [...prev, ...newImageURLs]);
     
     setImages((prev) => [...prev, ...files]);
   };
 
-  const removeImage = (index: number) => {
-    // Revogar URL do objeto quando remover a imagem
+  const removeImage = (index: number) => {    
     if (imageObjectURLs[index]) {
       URL.revokeObjectURL(imageObjectURLs[index]);
     }

@@ -11,7 +11,7 @@ export async function GET(req: Request) {
 
   let author = {
     name: 'Walter Santos de Andrade Souza',
-    email: 'wsasouza@hotmail.com',
+    email: 'upwebstudiobr@gmail.com',
   }
 
   let feed = new Feed({

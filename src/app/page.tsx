@@ -9,6 +9,7 @@ import {
   GitHubIcon,
   InstagramIcon,
   LinkedInIcon,
+  WhatsAppIcon,
   XIcon,
 } from '@/components/SocialIcons'
 import logoAirbnb from '@/images/logos/airbnb.svg'
@@ -22,6 +23,7 @@ import image4 from '@/images/photos/image-4.jpg'
 import image5 from '@/images/photos/image-5.jpg'
 import { type ArticleWithSlug, getAllArticles, getPaginatedArticles } from '@/lib/articles'
 import { formatDate } from '@/lib/formatDate'
+import { info } from '@/utils/info'
 
 function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -92,7 +94,7 @@ function Article({ article }: { article: ArticleWithSlug }) {
         {formatDate(article.date)}
       </Card.Eyebrow>
       <Card.Description>{article.description}</Card.Description>
-      <Card.Cta>Read article</Card.Cta>
+      <Card.Cta>Leia o artigo</Card.Cta>
     </Card>
   )
 }
@@ -104,7 +106,7 @@ function SocialLink({
   icon: React.ComponentType<{ className?: string }>
 }) {
   return (
-    <Link className="group -m-1 p-1" {...props}>
+    <Link className="group -m-1 p-1" {...props} target="_blank" rel="noopener noreferrer">
       <Icon className="h-6 w-6 fill-zinc-500 transition group-hover:fill-zinc-600 dark:fill-zinc-400 dark:group-hover:fill-zinc-300" />
     </Link>
   )
@@ -273,30 +275,31 @@ export default async function Home() {
       <Container className="mt-9">
         <div className="max-w-2xl">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-800 sm:text-5xl dark:text-zinc-100">
-            Software designer, founder, and amateur astronaut.
+          Desenvolvedor full-stack, empreendedor e corredor amador.
           </h1>
           <p className="mt-6 text-base text-zinc-600 dark:text-zinc-400">
-            I&apos;m Spencer, a software designer and entrepreneur based in New York
-            City. I&apos;m the founder and CEO of Planetaria, where we develop
-            technologies that empower regular people to explore space on their
-            own terms.
+          Sou Walter Souza, criador da Up Web Studio e apaixonado por transformar idéias em produtos digitais. Ajudo startups a lançarem MVPs inteligentes e empresas locais a conquistarem presença digital com qualidade, performance e propósito — com o mesmo foco e determinação que me movem nos meus treinos como corredor amador.
           </p>
           <div className="mt-6 flex gap-6">
-            <SocialLink href="#" aria-label="Follow on X" icon={XIcon} />
             <SocialLink
-              href="#"
-              aria-label="Follow on Instagram"
+              href={info.instagram}
+              aria-label="Me siga no Instagram"
               icon={InstagramIcon}
             />
             <SocialLink
-              href="#"
-              aria-label="Follow on GitHub"
+              href={info.github}
+              aria-label="Me siga no GitHub"
               icon={GitHubIcon}
             />
             <SocialLink
-              href="#"
-              aria-label="Follow on LinkedIn"
+              href={info.linkedin}
+              aria-label="Me siga no LinkedIn"
               icon={LinkedInIcon}
+            />
+            <SocialLink
+              href={info.whatsapp}
+              aria-label="Fale comigo no WhatsApp"
+              icon={WhatsAppIcon}
             />
           </div>
         </div>

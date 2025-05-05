@@ -33,7 +33,7 @@ export default function RootLayout({
         <Providers>
           <div className="fixed inset-0 -z-10">
             <Particles
-              particleColors={['#fafafa', '#1d4ed8']}
+              particleColors={['#fafafa', '#facc15']}
               particleCount={200}
               particleSpread={10}
               speed={0.1}
