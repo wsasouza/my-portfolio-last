@@ -76,7 +76,7 @@ export async function DELETE(
           if (filePathMatch) {
             // Remover a barra inicial para obter um caminho relativo
             const filePath = filePathMatch[0].substring(1);
-            const fileRef = storage.file(filePath);
+            const fileRef = storage.bucket().file(filePath);
             
             // Verificar se o arquivo existe
             const [exists] = await fileRef.exists();

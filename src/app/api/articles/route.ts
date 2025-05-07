@@ -157,7 +157,7 @@ export async function POST(request: Request) {
         const fileName = `articles/${slug}/${uuidv4()}-${file.name}`;
         console.log(`Caminho do arquivo no Storage: ${fileName}`);
         
-        const fileRef = storage.file(fileName);
+        const fileRef = storage.bucket().file(fileName);
         
         console.log(`Salvando arquivo no Firebase Storage...`);
         await fileRef.save(Buffer.from(fileBuffer), {
@@ -250,7 +250,7 @@ export async function PUT(request: Request) {
         const fileName = `articles/${slug}/${uuidv4()}-${file.name}`;
         console.log(`PUT: Caminho do arquivo no Storage: ${fileName}`);
         
-        const fileRef = storage.file(fileName);
+        const fileRef = storage.bucket().file(fileName);
         
         console.log(`PUT: Salvando arquivo no Firebase Storage...`);
         await fileRef.save(Buffer.from(fileBuffer), {

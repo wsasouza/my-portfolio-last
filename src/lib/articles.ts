@@ -11,8 +11,8 @@ export interface Article {
 }
 
 export interface ArticleWithSlug extends Article {
-  id: string; // ID do documento
-  slug: string; // slug para URLs amigáveis
+  id: string; 
+  slug: string; 
 }
 
 export interface PaginatedArticles {
@@ -35,22 +35,18 @@ export async function getAllArticles(): Promise<ArticleWithSlug[]> {
     
     return articles;
   } catch (error) {
-    console.error('Erro ao buscar artigos do Firestore:', error);
-    // Fallback para arquivos locais se configuração do Firebase não estiver completa
+    console.error('Erro ao buscar artigos do Firestore:', error);    
     return [];
   }
 }
 
 export async function getPaginatedArticles(page: number = 1, limit: number = 5): Promise<PaginatedArticles> {
-  try {
-    // Obter a contagem total (em uma aplicação real, isso seria implementado com uma abordagem mais eficiente)
+  try {    
     const countSnapshot = await db.collection('articles').count().get();
-    const totalCount = countSnapshot.data().count;
+    const totalCount = countSnapshot.data().count;    
     
-    // Calcular o offset
-    const offset = (page - 1) * limit;
+    const offset = (page - 1) * limit;    
     
-    // Obter artigos paginados
     const articlesSnapshot = await db.collection('articles')
       .orderBy('date', 'desc')
       .limit(limit)
@@ -58,8 +54,8 @@ export async function getPaginatedArticles(page: number = 1, limit: number = 5):
       .get();
     
     const articles = articlesSnapshot.docs.map((doc: DocumentData) => ({
-      id: doc.id, // ID do documento
-      slug: doc.data().slug, // Usar o slug do documento
+      id: doc.id, 
+      slug: doc.data().slug, 
       ...doc.data(),
     })) as ArticleWithSlug[];
     
@@ -71,7 +67,7 @@ export async function getPaginatedArticles(page: number = 1, limit: number = 5):
       hasMore
     };
   } catch (error) {
-    // Fallback para array vazio
+    console.error('Erro ao buscar artigos paginados do Firestore:', error);
     return {
       articles: [],
       totalCount: 0,
@@ -81,8 +77,7 @@ export async function getPaginatedArticles(page: number = 1, limit: number = 5):
 }
 
 export async function getArticleBySlug(slug: string): Promise<ArticleWithSlug | null> {
-  try {
-    // Buscar artigo pelo slug na query
+  try {    
     const articlesQuery = await db.collection('articles')
       .where('slug', '==', slug)
       .limit(1)
@@ -95,7 +90,7 @@ export async function getArticleBySlug(slug: string): Promise<ArticleWithSlug | 
     const articleDoc = articlesQuery.docs[0];
     
     return {
-      id: articleDoc.id, // ID do documento
+      id: articleDoc.id, 
       ...articleDoc.data(),
     } as ArticleWithSlug;
   } catch (error) {

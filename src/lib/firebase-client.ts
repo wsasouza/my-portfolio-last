@@ -11,10 +11,8 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Inicializar Firebase
 const firebaseApp = initializeApp(firebaseConfig);
 
-// Inicializar Storage
 const storage = getStorage(firebaseApp);
 
 export { storage };
