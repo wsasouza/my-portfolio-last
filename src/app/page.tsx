@@ -21,7 +21,7 @@ import image2 from '@/images/photos/image-2.jpg'
 import image3 from '@/images/photos/image-3.jpg'
 import image4 from '@/images/photos/image-4.jpg'
 import image5 from '@/images/photos/image-5.jpg'
-import { type ArticleWithSlug, getAllArticles, getPaginatedArticles } from '@/lib/articles'
+import { type ArticleWithSlug, getPaginatedArticles } from '@/lib/articles'
 import { formatDate } from '@/lib/formatDate'
 import { info } from '@/utils/info'
 
@@ -268,7 +268,7 @@ function Photos() {
 }
 
 export default async function Home() {
-  const { articles } = await getPaginatedArticles(1, 5);
+  const { articles } = await getPaginatedArticles(1, 4);
 
   return (
     <>

@@ -13,16 +13,14 @@ export default function EditArticlePage() {
 
   useEffect(() => {
     const fetchArticle = async () => {
-      try {
-        // Buscamos o artigo pelo slug na URL
+      try {        
         const response = await fetch(`/api/articles/${params.slug}`);
         const data = await response.json();
         
         if (!response.ok) {
           throw new Error(data.error || 'Erro ao buscar artigo');
-        }
+        }        
         
-        // O artigo agora contém o ID do documento e o slug
         setArticle(data.article);
       } catch (err: any) {
         setError(err.message);
@@ -35,21 +33,19 @@ export default function EditArticlePage() {
     if (params.slug) {
       fetchArticle();
     }
-  }, [params.slug]);
+  }, [params.slug]);  
 
-  if (isLoading) {
-    return <div className="container mx-auto py-8 px-4">Carregando...</div>;
-  }
-
-  if (error) {
-    return (
+  return <SimpleLayout title="Editar Artigo" intro="Edições dos artigos">
+    {isLoading ? (
+      <div className="container mx-auto py-8 px-4">Carregando...</div>
+    ) : error ? (
       <div className="container mx-auto py-8 px-4">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
         </div>
       </div>
-    );
-  }
-
-  return <SimpleLayout title="Edit Article" intro="Edit a article"><ArticleEditor article={article} /></SimpleLayout>;
+    ) : (
+      <ArticleEditor article={article} />
+    )}
+  </SimpleLayout>;
 } 

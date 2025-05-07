@@ -7,7 +7,6 @@ import { type ArticleWithSlug, getPaginatedArticles } from '@/lib/articles'
 import { formatDate } from '@/lib/formatDate'
 import { Pagination } from '@/components/Pagination'
 
-// Configuração do breadcrumb para a página de artigos
 const breadcrumbItems = [
   {
     label: 'Artigos',
@@ -47,30 +46,27 @@ function Article({ article }: { article: ArticleWithSlug }) {
 export const metadata: Metadata = {
   title: 'Artigos',
   description:
-    'Meus pensamentos sobre programação, design, liderança, e mais, coletados em ordem cronológica.',
+    'Reflexões sobre desenvolvimento, tecnologia, carreira e aprendizados da prática.',
 }
 
 interface ArticlesPageProps {
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export default async function ArticlesIndex({ searchParams }: ArticlesPageProps) {
-  // Obter o número da página a partir dos parâmetros da URL
+export default async function ArticlesIndex({ searchParams }: ArticlesPageProps) {  
   const pageParam = searchParams.pagina;
   const currentPage = typeof pageParam === 'string' 
     ? parseInt(pageParam, 10) || 1 
-    : 1;
+    : 1;  
   
-  // Obter artigos paginados (5 por página)
-  const { articles, totalCount, hasMore } = await getPaginatedArticles(currentPage, 5);
+  const { articles, totalCount, hasMore } = await getPaginatedArticles(currentPage, 4);  
   
-  // Calcular o número total de páginas
-  const totalPages = Math.ceil(totalCount / 5);
+  const totalPages = Math.ceil(totalCount / 4);
 
   return (
     <SimpleLayout
-      title="Escrevendo sobre design de software, desenvolvimento, e tecnologia."
-      intro="Meus pensamentos sobre programação, design, liderança, e mais, coletados em ordem cronológica."
+      title="Escrevendo sobre desenvolvimento e tecnologias que venho explorando."
+      intro="Registro dos meus aprendizados enquanto estudo frameworks, ferramentas e boas práticas de desenvolvimento"
     >
       {/* Breadcrumb */}
       <div className="mb-8">
@@ -82,16 +78,14 @@ export default async function ArticlesIndex({ searchParams }: ArticlesPageProps)
           {articles.map((article) => (
             <Article key={article.slug} article={article} />
           ))}
-        </div>
-        
-        {/* Exibir mensagem se não houver artigos */}
+        </div>        
+       
         {articles.length === 0 && (
           <p className="text-center text-zinc-500 dark:text-zinc-400 mt-10">
             Nenhum artigo encontrado.
           </p>
-        )}
-        
-        {/* Componente de paginação */}
+        )}        
+       
         <Pagination 
           currentPage={currentPage} 
           totalPages={totalPages} 

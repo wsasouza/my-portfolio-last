@@ -40,7 +40,7 @@ export async function getAllArticles(): Promise<ArticleWithSlug[]> {
   }
 }
 
-export async function getPaginatedArticles(page: number = 1, limit: number = 5): Promise<PaginatedArticles> {
+export async function getPaginatedArticles(page: number = 1, limit: number = 4): Promise<PaginatedArticles> {
   try {    
     const countSnapshot = await db.collection('articles').count().get();
     const totalCount = countSnapshot.data().count;    

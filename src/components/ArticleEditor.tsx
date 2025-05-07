@@ -143,7 +143,11 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
         slug,
         content,
         imageUrls: allImages,
-      };           
+      };      
+      
+      if (article?.id) {        
+        articleData.id = article.id;
+      } 
 
       const response = await fetch(`/api/articles-client`, {
         method: article ? 'PUT' : 'POST',
@@ -190,8 +194,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       </div>
     );
   };
-
-  // Função para inserir imagem no editor (usando markdown puro)
+  
   const insertImageInContent = (filename: string, imageUrl: string) => {
     const updatedContent = insertImageInEditor(
       content,

@@ -8,9 +8,8 @@ import { Pagination } from '@/components/Pagination';
 import { useSearchParams } from 'next/navigation';
 
 interface Article {
-  id: string; // ID do documento
-  articleId: string; // ID do artigo (mesmo que o ID do documento)
-  slug: string; // slug para URLs amigáveis
+  id: string;   
+  slug: string; 
   title: string;
   description: string;
   author: string;
@@ -69,8 +68,7 @@ export default function AdminArticlesPage() {
       return;
     }
     
-    try {
-      // Usamos o slug para a URL da API, mas podemos usar o ID internamente
+    try {      
       const response = await fetch(`/api/articles/${slug}`, {
         method: 'DELETE',
       });
@@ -80,11 +78,9 @@ export default function AdminArticlesPage() {
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao excluir artigo');
       }
-      
-      // Atualizar a lista após excluir
+            
       setArticles(articles.filter(article => article.id !== id));
-      
-      // Atualizar contagem total de artigos
+            
       setPagination(prev => ({
         ...prev,
         totalCount: prev.totalCount - 1,
@@ -196,9 +192,8 @@ export default function AdminArticlesPage() {
             </table>
           </div>
         </div>
-      )}
+      )}      
       
-      {/* Componente de paginação */}
       <Pagination 
         currentPage={pagination.page} 
         totalPages={pagination.totalPages} 
