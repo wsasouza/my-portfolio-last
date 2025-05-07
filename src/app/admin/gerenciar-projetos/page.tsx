@@ -14,6 +14,7 @@ interface Project {
   description: string;
   link: { href: string; label: string };
   logo?: string;
+  tags?: string[];
 }
 
 interface PaginationInfo {
@@ -132,6 +133,9 @@ export default function AdminProjectsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider">
                     Domínio
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider">
+                    Tecnologias
+                  </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-zinc-300 uppercase tracking-wider w-[200px]">
                     Ações
                   </th>
@@ -140,7 +144,7 @@ export default function AdminProjectsPage() {
               <tbody className="bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-zinc-700">
                 {projects.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-6 py-4 text-center text-gray-500 dark:text-zinc-400">
+                    <td colSpan={4} className="px-6 py-4 text-center text-gray-500 dark:text-zinc-400">
                       Nenhum projeto encontrado.
                     </td>
                   </tr>
@@ -177,6 +181,22 @@ export default function AdminProjectsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
                         {project.link?.label || '-'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-zinc-400">
+                        {project.tags && project.tags.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {project.tags.map(tag => (
+                              <span 
+                                key={tag} 
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          '-'
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex flex-wrap justify-end gap-3">

@@ -13,6 +13,7 @@ interface ProjectEditorProps {
     description?: string;
     link?: { href: string; label: string };
     logo?: string;
+    tags?: string[];
   } | null;
 }
 
@@ -21,6 +22,7 @@ interface ProjectData {
   description: string;
   link: { href: string; label: string };
   logo?: string;
+  tags?: string[];
   id?: string;
 }
 
@@ -30,6 +32,7 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
   const [description, setDescription] = useState(project?.description || '');
   const [linkHref, setLinkHref] = useState(project?.link?.href || '');
   const [linkLabel, setLinkLabel] = useState(project?.link?.label || '');
+  const [tagsInput, setTagsInput] = useState(project?.tags?.join(', ') || '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(project?.logo || null);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,6 +46,7 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
       setDescription(project.description || '');
       setLinkHref(project.link?.href || '');
       setLinkLabel(project.link?.label || '');
+      setTagsInput(project.tags?.join(', ') || '');
       setLogoPreview(project.logo || null);
     }
   }, [project]);
@@ -73,6 +77,15 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
     }
   };
 
+  const parseTags = (tagsString: string): string[] => {
+    if (!tagsString.trim()) return [];
+    
+    return tagsString
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
+  };
+
   const saveProject = async () => {
     try {
       setIsLoading(true);
@@ -89,6 +102,9 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
       // Upload do logo para o Firebase Storage
       const logoUrl = await uploadLogoToFirebase(slug);
       
+      // Processar tags
+      const tags = parseTags(tagsInput);
+      
       // Preparar dados do projeto
       const projectData: ProjectData = {
         name,
@@ -98,6 +114,7 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
           label: linkLabel || linkHref
         },
         logo: logoUrl || undefined,
+        tags: tags.length > 0 ? tags : undefined,
       };
       
       // Se estiver editando um projeto existente, adicione o ID
@@ -199,6 +216,23 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
           placeholder="github.com"
           className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-700 dark:text-white"
         />
+      </div>
+      
+      <div className="mb-4">
+        <label htmlFor="tags" className="block text-gray-700 dark:text-zinc-300 font-medium mb-2">
+          Tecnologias (separadas por vírgula)
+        </label>
+        <input
+          type="text"
+          id="tags"
+          value={tagsInput}
+          onChange={(e) => setTagsInput(e.target.value)}
+          placeholder="typescript, next.js, tailwind, etc."
+          className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-700 dark:text-white"
+        />
+        <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+          Ex: typescript, next.js, tailwind, firebase
+        </p>
       </div>
       
       <div className="mb-6">

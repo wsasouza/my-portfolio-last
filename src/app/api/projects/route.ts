@@ -49,7 +49,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const projectData: Project = await request.json();
-    const { name, description, link, logo } = projectData;
+    const { name, description, link, logo, tags } = projectData;
     const projectRef = db.collection('projects').doc();
     const documentId = projectRef.id;
     await projectRef.set({
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
       description,
       link,
       logo,
+      tags,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     return NextResponse.json({ success: true, id: documentId });
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const projectData: Project & { id: string } = await request.json();
-    const { id, name, description, link, logo } = projectData;
+    const { id, name, description, link, logo, tags } = projectData;
     
     if (!id) {
       return NextResponse.json(
@@ -95,6 +96,7 @@ export async function PUT(request: Request) {
       description,
       link,
       logo,
+      tags,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     

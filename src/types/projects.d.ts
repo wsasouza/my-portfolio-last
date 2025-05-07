@@ -3,6 +3,7 @@ export interface Project {
   description: string;
   link: { href: string; label: string };
   logo?: string;
+  tags?: string[];
 }
 
 export interface ProjectWithId extends Project {
