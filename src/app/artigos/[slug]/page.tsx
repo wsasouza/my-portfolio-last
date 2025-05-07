@@ -33,12 +33,10 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   
   if (!article) {
     notFound();
-  }
+  }  
   
-  // Extrair o conteúdo do artigo do MDX armazenado
-  const content = article.content || '';
+  const content = article.content || '';  
   
-  // Configuração do breadcrumb
   const breadcrumbItems = [
     {
       label: 'Artigos',
@@ -48,9 +46,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       label: article.title,
       href: `/artigos/${article.slug}`,
     },
-  ];
+  ];  
   
-  // Debug do conteúdo MDX
   if (process.env.NODE_ENV !== 'production') {
     const debug = debugMDXContent(content);
     console.log('Debug do conteúdo MDX:', {
@@ -66,15 +63,13 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     if (debug.warnings.length > 0) {
       console.warn('Avisos de MDX:', debug.warnings);
     }
-  }
+  }  
   
-  // Verificar se temos alguma imagem disponível
   const hasImages = article.imageUrls && Object.keys(article.imageUrls).length > 0;
   
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-      <div className="py-16">
-        {/* Breadcrumb */}
+      <div className="py-16">       
         <div className="mb-8">
           <Breadcrumb items={breadcrumbItems} />
         </div>
@@ -97,9 +92,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         <div className="mt-8">
           <p className="text-lg text-zinc-600 dark:text-zinc-400">
             {article.description}
-          </p>
+          </p>          
           
-          {/* Renderizador MDX */}
           {content ? (
             <MDXRenderer 
               content={content} 

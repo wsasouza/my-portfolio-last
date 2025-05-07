@@ -7,9 +7,8 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   try {
-    const { slug } = params;
+    const { slug } = params;    
     
-    // Buscar artigo pelo slug na query
     const articlesQuery = await db.collection('articles')
       .where('slug', '==', slug)
       .limit(1)
@@ -24,8 +23,7 @@ export async function GET(
     
     const articleDoc = articlesQuery.docs[0];
     const article = {
-      id: articleDoc.id, // ID do documento
-      articleId: articleDoc.id, // ID do artigo (mesmo que o ID do documento)
+      id: articleDoc.id,       
       ...articleDoc.data(),
     };
     
@@ -45,9 +43,8 @@ export async function DELETE(
   { params }: { params: { slug: string } }
 ) {
   try {
-    const { slug } = params;
+    const { slug } = params;    
     
-    // Buscar artigo pelo slug na query
     const articlesQuery = await db.collection('articles')
       .where('slug', '==', slug)
       .limit(1)
@@ -62,23 +59,19 @@ export async function DELETE(
     
     const articleDoc = articlesQuery.docs[0];
     const articleId = articleDoc.id;
-    const articleData = articleDoc.data();
+    const articleData = articleDoc.data();    
     
-    // Excluir imagens associadas ao artigo do Storage
     if (articleData?.imageUrls) {
       const imageUrls = articleData.imageUrls as Record<string, string>;
       
       for (const [_, url] of Object.entries(imageUrls)) {
-        try {
-          // Extrair o caminho do arquivo da URL do Firebase Storage
+        try {          
           const filePathMatch = url.match(/\/articles\/[^/]+\/[^/]+$/);
           
-          if (filePathMatch) {
-            // Remover a barra inicial para obter um caminho relativo
+          if (filePathMatch) {            
             const filePath = filePathMatch[0].substring(1);
-            const fileRef = storage.bucket().file(filePath);
+            const fileRef = storage.bucket().file(filePath);            
             
-            // Verificar se o arquivo existe
             const [exists] = await fileRef.exists();
             
             if (exists) {
@@ -86,13 +79,11 @@ export async function DELETE(
             }
           }
         } catch (fileError) {
-          console.error('Erro ao excluir arquivo:', fileError);
-          // Continuar mesmo com erro para tentar excluir outros arquivos
+          console.error('Erro ao excluir arquivo:', fileError);          
         }
       }
-    }
+    }    
     
-    // Excluir o documento do artigo no Firestore usando o ID do documento
     await db.collection('articles').doc(articleId).delete();
     
     return NextResponse.json({ success: true });

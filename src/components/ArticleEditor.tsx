@@ -43,8 +43,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [existingImages, setExistingImages] = useState<Record<string, string>>(article?.imageUrls || {});  
-  const [imageObjectURLs, setImageObjectURLs] = useState<string[]>([]);
-  const [uploadedImages, setUploadedImages] = useState<Record<string, string>>({});
+  const [imageObjectURLs, setImageObjectURLs] = useState<string[]>([]);  
   const { uploadImage, uploadState } = useFirebaseStorage();
   const contentTextAreaRef = useRef<HTMLTextAreaElement>(null);
   
@@ -62,17 +61,13 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     
-    const files = Array.from(e.target.files);
-    console.log(`Selecionado ${files.length} arquivo(s) de imagem`);
+    const files = Array.from(e.target.files);    
     
-    
-    files.forEach((file, index) => {
-      console.log(`Arquivo ${index + 1}: ${file.name}, tipo: ${file.type}, tamanho: ${file.size} bytes`);
+    files.forEach((file) => {      
       if (!file.type.startsWith('image/')) {
         console.warn(`Aviso: O arquivo ${file.name} não parece ser uma imagem válida (tipo: ${file.type})`);
       }
-    });
-    
+    });    
     
     const newImageURLs = files.map(file => URL.createObjectURL(file));
     setImageObjectURLs(prev => [...prev, ...newImageURLs]);
@@ -100,15 +95,12 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
     setContent(e.target.value);
   };
 
-  const uploadImagesToFirebase = async () => {
-    // Primeiro fazemos o upload das imagens para o Firebase Storage
+  const uploadImagesToFirebase = async () => {    
     const folderPath = article?.slug || slugify(title, { lower: true });
     
     const imageUploadPromises = images.map(async (img) => {
-      try {
-        // Upload da imagem para o Firebase Storage
-        const imageUrl = await uploadImage(img, `articles/${folderPath}`);
-        console.log(`Imagem ${img.name} enviada com sucesso: ${imageUrl}`);
+      try {        
+        const imageUrl = await uploadImage(img, `articles/${folderPath}`);        
         return { name: img.name, url: imageUrl };
       } catch (error) {
         console.error(`Erro ao enviar imagem ${img.name}:`, error);
@@ -116,9 +108,8 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       }
     });
     
-    const uploadedImageResults = await Promise.all(imageUploadPromises);
+    const uploadedImageResults = await Promise.all(imageUploadPromises);    
     
-    // Converter resultados para o formato de record
     const uploadedImagesMap: Record<string, string> = {};
     uploadedImageResults.forEach(({ name, url }) => {
       uploadedImagesMap[name] = url;
@@ -139,15 +130,11 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       }
       
       const slug = article?.slug || slugify(title, { lower: true });
-      console.log(`Slug gerado: ${slug}`);
       
-      // Upload de imagens para o Firebase Storage
-      const uploadedImagesMap = images.length > 0 ? await uploadImagesToFirebase() : {};
+      const uploadedImagesMap = images.length > 0 ? await uploadImagesToFirebase() : {};      
       
-      // Combinar imagens existentes com as novas imagens
-      const allImages = { ...existingImages, ...uploadedImagesMap };
+      const allImages = { ...existingImages, ...uploadedImagesMap };      
       
-      // Preparar dados do artigo
       const articleData: ArticleData = {
         title,
         description,
@@ -156,18 +143,8 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
         slug,
         content,
         imageUrls: allImages,
-      };
-      
-      // Se estiver editando um artigo existente, adicione o ID do artigo
-      if (article?.id) {
-        console.log(`Editando artigo existente com ID: ${article.id}`);
-        articleData.id = article.id;
-      } else {
-        console.log('Criando novo artigo');
-      }
-      
-      // Enviar dados do artigo para a API
-      console.log(`Enviando requisição ${article ? 'PUT' : 'POST'} para /api/articles-client`);
+      };           
+
       const response = await fetch(`/api/articles-client`, {
         method: article ? 'PUT' : 'POST',
         headers: {
@@ -190,15 +167,13 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       setIsLoading(false);
     }
   };
-
-  // Limpar as URLs de objeto ao desmontar o componente
+  
   useEffect(() => {
     return () => {
       imageObjectURLs.forEach(url => URL.revokeObjectURL(url));
     };
   }, [imageObjectURLs]);
-
-  // Renderizar progresso de upload
+ 
   const renderUploadProgress = (filename: string) => {
     const state = uploadState[filename];
     if (!state || !state.isUploading) return null;
@@ -225,18 +200,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       contentTextAreaRef.current
     );
     setContent(updatedContent);
-  };
-
-  // Função para inserir imagem no editor (usando componente Next.js Image)
-  const insertNextImageInContent = (filename: string, imageUrl: string) => {
-    const updatedContent = insertNextImageInEditor(
-      content,
-      filename,
-      imageUrl,
-      contentTextAreaRef.current
-    );
-    setContent(updatedContent);
-  };
+  };  
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -302,38 +266,30 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
             multiple
             accept="image/*"
             className="mb-2"
-          />
+          />          
           
-          {/* Exibir imagens existentes */}
           {Object.keys(existingImages).length > 0 && (
             <div className="mt-4">
               <h3 className="font-medium mb-2">Imagens existentes:</h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-4 mb-8">
                 {Object.entries(existingImages).map(([filename, url]) => (
                   <div key={filename} className="relative">
-                    <div className="h-20 w-20 relative">
+                    <div className="h-20 w-32 relative">
                       <Image
                         src={url}
                         alt={filename}
                         fill
-                        className="object-cover rounded"
+                        className="object-contain rounded"
                       />
                     </div>
                     <div className="absolute flex space-x-1 -bottom-6 left-0 right-0">
                       <button
                         onClick={() => insertImageInContent(filename, url)}
-                        className="bg-green-500 text-white text-xs rounded px-1 py-0.5 hover:bg-green-600"
+                        className="bg-green-500 text-white text-xs rounded px-1 py-0.5 hover:bg-green-600 cursor-pointer"
                         title="Inserir como Markdown"
                       >
                         MD
-                      </button>
-                      <button
-                        onClick={() => insertNextImageInContent(filename, url)}
-                        className="bg-blue-500 text-white text-xs rounded px-1 py-0.5 hover:bg-blue-600"
-                        title="Inserir como Next Image"
-                      >
-                        Next
-                      </button>
+                      </button>                      
                     </div>
                     <button
                       onClick={() => removeExistingImage(filename)}
@@ -349,9 +305,9 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
             </div>
           )}
           
-          {/* Exibir novas imagens */}
+          
           {images.length > 0 && (
-            <div className="mt-4">
+            <div className="mt-8">
               <h3 className="font-medium mb-2">Novas imagens:</h3>
               <div className="flex flex-wrap gap-2">
                 {images.map((img, idx) => (
@@ -362,7 +318,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
                         src={imageObjectURLs[idx] || ''}
                         alt={img.name}
                         fill
-                        className="object-cover rounded"
+                        className="object-contain rounded"
                         unoptimized
                       />
                     </div>
@@ -374,14 +330,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
                           title="Inserir como Markdown"
                         >
                           MD
-                        </button>
-                        <button
-                          onClick={() => insertNextImageInContent(img.name, uploadState[img.name]?.url || '')}
-                          className="bg-blue-500 text-white text-xs rounded px-1 py-0.5 hover:bg-blue-600"
-                          title="Inserir como Next Image"
-                        >
-                          Next
-                        </button>
+                        </button>                        
                       </div>
                     )}
                     <button
@@ -413,12 +362,9 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
         
         <div className="mt-4 text-sm text-zinc-500">
           <p>Dicas:</p>
-          <ul className="list-disc pl-5">
-            <li>Use <code>{'![Descrição da imagem](URL da imagem)'}</code> para inserir imagens usando Markdown</li>
-            <li>Use o botão <strong>MD</strong> para inserir imagens como Markdown</li>
-            <li>Use o botão <strong>Next</strong> para inserir imagens com o componente Image do Next.js</li>
-            <li>Use <code>{'[Texto do link](https://exemplo.com)'}</code> para inserir links</li>
-            <li>Use <code>{'<a href="https://exemplo.com" target="_blank">Link externo</a>'}</code> para links que abrem em nova aba</li>
+          <ul className="list-disc pl-5">            
+            <li>Use o botão <strong>MD</strong> para inserir imagens como Markdown</li>           
+            <li>Use <code>{'[Texto do link](https://exemplo.com)'}</code> para inserir links</li>            
             <li>Use ## para títulos de seção</li>
             <li>Use **texto** para negrito</li>
             <li>Use *texto* para itálico</li>

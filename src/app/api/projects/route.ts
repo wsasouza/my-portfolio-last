@@ -81,7 +81,6 @@ export async function PUT(request: Request) {
       );
     }
     
-    // Verificar se o projeto existe
     const projectDoc = await db.collection('projects').doc(id).get();
     if (!projectDoc.exists) {
       return NextResponse.json(
@@ -89,8 +88,7 @@ export async function PUT(request: Request) {
         { status: 404 }
       );
     }
-    
-    // Atualizar o projeto no Firestore
+        
     await db.collection('projects').doc(id).update({
       name,
       description,

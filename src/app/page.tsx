@@ -313,7 +313,7 @@ export default async function Home() {
             ))}
             {articles.length > 0 && (
               <div className="flex justify-center">
-                <Button href="/articles" variant="secondary">
+                <Button href="/artigos" variant="secondary">
                   Ver todos os artigos
                 </Button>
               </div>

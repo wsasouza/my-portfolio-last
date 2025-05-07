@@ -52,18 +52,16 @@ export async function DELETE(
     
     const projectData = projectDoc.data();
     
-    // Se o projeto tem um logo armazenado no Storage, excluir
+    
     if (projectData?.logo && typeof projectData.logo === 'string' && projectData.logo.includes('firebasestorage.googleapis.com')) {
       try {
-        // Extrair o caminho do arquivo da URL do Firebase Storage
+       
         const filePathMatch = projectData.logo.match(/\/projects\/[^/]+\/[^/]+$/);
         
         if (filePathMatch) {
-          // Remover a barra inicial para obter um caminho relativo
-          const filePath = filePathMatch[0].substring(1);
-          const fileRef = storage.bucket().file(filePath);
           
-          // Verificar se o arquivo existe
+          const filePath = filePathMatch[0].substring(1);
+          const fileRef = storage.bucket().file(filePath);          
           const [exists] = await fileRef.exists();
           
           if (exists) {
@@ -72,12 +70,10 @@ export async function DELETE(
           }
         }
       } catch (fileError) {
-        console.error('Erro ao excluir logo do projeto:', fileError);
-        // Continuar mesmo com erro para excluir o documento
+        console.error('Erro ao excluir logo do projeto:', fileError);       
       }
-    }
-    
-    // Excluir o documento do projeto no Firestore
+    }    
+   
     await db.collection('projects').doc(id).delete();
     
     return NextResponse.json({ success: true });
