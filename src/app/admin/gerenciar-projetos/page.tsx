@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { SimpleLayout } from '@/components/SimpleLayout';
 import { Pagination } from '@/components/Pagination';
 import { useSearchParams } from 'next/navigation';
-import logoPlanetaria from '@/images/logos/planetaria.svg';
 
 interface Project {
   id: string;
@@ -78,12 +77,10 @@ export default function AdminProjectsPage() {
       
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao excluir projeto');
-      }
+      }      
       
-      // Atualizar a lista após excluir
-      setProjects(projects.filter(project => project.id !== id));
+      setProjects(projects.filter(project => project.id !== id));      
       
-      // Atualizar contagem total de projetos
       setPagination(prev => ({
         ...prev,
         totalCount: prev.totalCount - 1,
@@ -228,9 +225,8 @@ export default function AdminProjectsPage() {
             </table>
           </div>
         </div>
-      )}
+      )}      
       
-      {/* Componente de paginação */}
       <Pagination 
         currentPage={pagination.page} 
         totalPages={pagination.totalPages} 

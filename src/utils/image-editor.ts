@@ -15,12 +15,11 @@ export function insertImageInEditor(
 ): string {
   if (!textArea || !filename || !imageUrl) {
     return content;
-  }
-  
-  // Criar nome de variável a partir do nome do arquivo (formato camelCase)
+  }  
+
   let varName = filename
-    .split('.')[0] // Remover extensão
-    .replace(/[^a-zA-Z0-9]/g, ' ') // Substituir caracteres especiais por espaços
+    .split('.')[0] 
+    .replace(/[^a-zA-Z0-9]/g, ' ') 
     .split(' ')
     .filter(Boolean)
     .map((word, index) => {
@@ -29,31 +28,22 @@ export function insertImageInEditor(
       }
       return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     })
-    .join('');
+    .join('');  
   
-  // Adicionar sufixo Img para identificar que é uma imagem
   varName = `${varName}Img`;
   
-  // Obter posição do cursor
   const cursorStart = textArea.selectionStart;
-  const cursorEnd = textArea.selectionEnd;
+  const cursorEnd = textArea.selectionEnd;  
   
-  // Abordagem alternativa que não depende de importações e declarações
-  // Em vez disso, usamos a URL diretamente no atributo src
+  const imageTag = `![${filename}](${imageUrl})\n\n`;  
   
-  // Tag de imagem para inserir no cursor - usando sintaxe MDX direta sem componente
-  const imageTag = `![${filename}](${imageUrl})\n\n`;
-  
-  // Construir conteúdo atualizado
-  let updatedContent = content;
-  
-  // Inserir tag da imagem na posição do cursor
+  let updatedContent = content;  
+ 
   updatedContent = 
     updatedContent.substring(0, cursorStart) + 
     imageTag + 
-    updatedContent.substring(cursorEnd);
+    updatedContent.substring(cursorEnd);  
   
-  // Focar o textarea e posicionar o cursor após a tag inserida
   setTimeout(() => {
     textArea.focus();
     const newCursorPos = cursorStart + imageTag.length;
@@ -81,36 +71,30 @@ export function insertNextImageInEditor(
 ): string {
   if (!textArea || !filename || !imageUrl) {
     return content;
-  }
+  }  
   
-  // Obter posição do cursor
   const cursorStart = textArea.selectionStart;
-  const cursorEnd = textArea.selectionEnd;
+  const cursorEnd = textArea.selectionEnd;  
   
-  // Usar uma abordagem mais simples com o atributo src como string para maior compatibilidade
   const imageTag = `<Image 
 src="${imageUrl}"
 alt="${filename}"
 width={800}
 height={500}
-/>\n\n`;
+/>\n\n`;  
   
-  // Verificar se já existe importação de Image
-  const hasImageImport = content.includes('import Image from');
+  const hasImageImport = content.includes('import Image from');  
   
-  // Adicionar importação se necessário
   let updatedContent = content;
   if (!hasImageImport) {
     updatedContent = `import Image from 'next/image';\n\n${updatedContent}`;
-  }
+  }  
   
-  // Inserir tag da imagem na posição do cursor
   updatedContent = 
     updatedContent.substring(0, cursorStart) + 
     imageTag + 
-    updatedContent.substring(cursorEnd);
-  
-  // Focar o textarea e posicionar o cursor após a tag inserida
+    updatedContent.substring(cursorEnd);  
+
   setTimeout(() => {
     textArea.focus();
     const newCursorPos = cursorStart + imageTag.length;

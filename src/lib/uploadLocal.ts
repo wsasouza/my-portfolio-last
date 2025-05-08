@@ -14,28 +14,20 @@ export async function saveImageToLocal(
   fileBuffer: Buffer, 
   originalName: string, 
   folder: string = 'articles'
-): Promise<string> {
-  // Criar um nome de arquivo único
+): Promise<string> {  
   const fileExtension = path.extname(originalName);
-  const fileName = `${uuidv4()}${fileExtension}`;
+  const fileName = `${uuidv4()}${fileExtension}`;  
   
-  // Caminho da pasta destino
-  const uploadFolder = path.join(process.cwd(), 'public', 'uploads', folder);
+  const uploadFolder = path.join(process.cwd(), 'public', 'uploads', folder);  
   
-  // Criar pasta se não existir
   if (!fs.existsSync(uploadFolder)) {
     fs.mkdirSync(uploadFolder, { recursive: true });
-  }
+  }  
   
-  // Caminho completo do arquivo
-  const filePath = path.join(uploadFolder, fileName);
+  const filePath = path.join(uploadFolder, fileName);  
   
-  // Salvar arquivo
-  fs.writeFileSync(filePath, fileBuffer);
-  
-  console.log(`Arquivo salvo localmente em: ${filePath}`);
-  
-  // Retornar URL relativa do arquivo
+  fs.writeFileSync(filePath, fileBuffer);  
+ 
   return `/uploads/${folder}/${fileName}`;
 }
 
@@ -46,14 +38,10 @@ export async function saveImageToLocal(
  * @returns boolean indicando sucesso
  */
 export function deleteImageFromLocal(imageUrl: string): boolean {
-  try {
-    // A URL relativa começa com /uploads/...
-    // Obtemos o caminho completo do arquivo
-    const filePath = path.join(process.cwd(), 'public', imageUrl);
+  try {   
+    const filePath = path.join(process.cwd(), 'public', imageUrl);    
     
-    // Verificar se arquivo existe
-    if (fs.existsSync(filePath)) {
-      // Excluir arquivo
+    if (fs.existsSync(filePath)) {      
       fs.unlinkSync(filePath);
       console.log(`Arquivo excluído com sucesso: ${filePath}`);
       return true;

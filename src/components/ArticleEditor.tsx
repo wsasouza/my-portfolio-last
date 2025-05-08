@@ -298,7 +298,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
             onChange={handleImageUpload}
             multiple
             accept="image/*"
-            className="mb-2"
+            className="mb-2 cursor-pointer bg-blue-500 text-white rounded-md px-3 py-1.5 hover:bg-blue-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
           />          
           
           {Object.keys(existingImages).length > 0 && (
@@ -312,7 +312,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
                         src={url}
                         alt={filename}
                         fill
-                        className="object-contain rounded"
+                        className="object-contain rounded bg-zinc-200 dark:bg-zinc-800"
                       />
                     </div>
                     <div className="absolute flex space-x-1 -bottom-6 left-0 right-0">
@@ -326,7 +326,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
                     </div>
                     <button
                       onClick={() => removeExistingImage(filename)}
-                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center"
+                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center cursor-pointer"
                       title="Remover imagem"
                     >
                       &times;
@@ -368,7 +368,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
                     )}
                     <button
                       onClick={() => removeImage(idx)}
-                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center"
+                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center cursor-pointer"
                       title="Remover imagem"
                     >
                       &times;
@@ -408,14 +408,14 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       <div className="flex justify-end">
         <button
           onClick={() => router.push('/admin/gerenciar-artigos')}
-          className="px-4 py-2 mr-2 bg-zinc-200 rounded dark:bg-zinc-700"
+          className="px-4 py-2 mr-2 bg-zinc-200 rounded dark:bg-zinc-700 cursor-pointer"
           disabled={isLoading}
         >
           Cancelar
         </button>
         <button
           onClick={saveArticle}
-          className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-blue-300"
+          className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-blue-300 cursor-pointer"
           disabled={isLoading}
         >
           {isLoading ? 'Salvando...' : article ? 'Atualizar' : 'Publicar'} Artigo

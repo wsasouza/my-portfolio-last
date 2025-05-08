@@ -120,8 +120,7 @@ export default function ArticlesIndex() {
     fetchArticles();
   }, [currentPage, tagFilter]);
 
-  useEffect(() => {
-    // Atualizar os parâmetros de URL quando o estado mudar
+  useEffect(() => {    
     const params = new URLSearchParams();
     if (currentPage > 1) {
       params.set('pagina', currentPage.toString());
@@ -133,8 +132,7 @@ export default function ArticlesIndex() {
     const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
     router.replace(newUrl);
   }, [currentPage, tagFilter, pathname, router]);
-
-  // Quando os params da URL mudam externamente
+  
   useEffect(() => {
     if (pageParam) {
       const newPage = parseInt(pageParam, 10) || 1;

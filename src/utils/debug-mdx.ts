@@ -36,9 +36,8 @@ export function debugMDXContent(content: string): {
   info: DebugInfo;
   warnings: string[];
 } {
-  const warnings: string[] = [];
+  const warnings: string[] = [];  
   
-  // Verificar se o conteúdo é uma string válida
   if (typeof content !== 'string') {
     warnings.push('O conteúdo não é uma string válida');
     return { 
@@ -53,13 +52,11 @@ export function debugMDXContent(content: string): {
       } as unknown as DebugInfo,
       warnings 
     };
-  }
+  }  
   
-  // Determinar o formato do MDX
   const isOldFormat = content.includes('import { ArticleLayout }') || 
-                     content.includes('export default (props) => <ArticleLayout');
+                     content.includes('export default (props) => <ArticleLayout');  
   
-  // Informações básicas
   const info: DebugInfo = {
     length: content.length,
     excerpt: content.length > 0 ? `${content.substring(0, 100)}...` : '(vazio)',
@@ -68,9 +65,8 @@ export function debugMDXContent(content: string): {
     components: [],
     codeBlocks: 0,
     images: []
-  };
-  
-  // Extrair informações do frontmatter se existir
+  };  
+ 
   if (content.startsWith('---')) {
     const secondMarkerIndex = content.indexOf('---', 3);
     if (secondMarkerIndex !== -1) {
@@ -79,9 +75,8 @@ export function debugMDXContent(content: string): {
       info.frontmatter = {
         exists: true,
         raw: frontmatterRaw
-      };
-      
-      // Extrair propriedades básicas do frontmatter
+      };      
+     
       const titleMatch = frontmatterRaw.match(/title:\s*(?:"([^"]*)"|'([^']*)'|([^\n]*))/);
       if (titleMatch) {
         info.frontmatter.title = (titleMatch[1] || titleMatch[2] || titleMatch[3]).trim();
@@ -107,9 +102,8 @@ export function debugMDXContent(content: string): {
     }
   } else {
     info.frontmatter = { exists: false };
-  }
-  
-  // Verificar imports
+  }  
+ 
   const importMatches = content.match(/import\s+(\w+)\s+from\s+["']([^"']+)["']/g) || [];
   info.imports = importMatches.map(match => {
     const importMatch = /import\s+(\w+)\s+from\s+["']([^"']+)["']/.exec(match);
@@ -120,20 +114,17 @@ export function debugMDXContent(content: string): {
       };
     }
     return { varName: '', path: '' };
-  }).filter(item => item.varName !== '');
+  }).filter(item => item.varName !== '');  
   
-  // Verificar referências de componentes
   const componentMatches = content.match(/<[A-Z]\w+[^>]*>/g) || [];
   info.components = [...new Set(componentMatches.map(match => {
     const componentNameMatch = match.match(/<([A-Z]\w+)/);
     return componentNameMatch ? componentNameMatch[1] : '';
-  }).filter(Boolean))];
+  }).filter(Boolean))];  
   
-  // Verificar blocos de código
   const codeBlockMatches = content.match(/```[\s\S]*?```/g) || [];
-  info.codeBlocks = codeBlockMatches.length;
+  info.codeBlocks = codeBlockMatches.length;  
   
-  // Verificar imagens
   const imageMatches = content.match(/<Image[^>]*>/g) || [];
   info.images = imageMatches.map(match => {
     const srcMatch = match.match(/src=["']([^"']+)["']/) || match.match(/src=\{([^}]+)\}/);
@@ -145,25 +136,22 @@ export function debugMDXContent(content: string): {
       src,
       hasImport: typeof hasImport === 'boolean' ? hasImport : undefined
     };
-  });
+  });  
   
-  // Validar importações de imagens referenciadas
   info.images.forEach(image => {
     if (image.src && /^\w+$/.test(image.src) && 
         !info.imports.some(i => i.varName === image.src)) {
       warnings.push(`Imagem ${image.src} é referenciada, mas não foi importada`);
     }
-  });
+  });  
   
-  // Verificar JSX
   if (content.includes('<') && content.includes('>')) {
     const jsxBalance = content.split('<').length - content.split('>').length;
     if (jsxBalance !== 0) {
       warnings.push(`Possível desbalanceamento de tags JSX: diferença de ${jsxBalance}`);
     }
-  }
-  
-  // Verificar se frontmatter está presente no formato esperado
+  }  
+ 
   if (info.format === 'new' && !content.startsWith('---')) {
     warnings.push('Conteúdo MDX no novo formato deve começar com frontmatter (---)');
   }

@@ -31,9 +31,8 @@ export function ArticleLayout({
   children: React.ReactNode
 }) {
   let router = useRouter()
-  let { previousPathname } = useContext(AppContext)
+  let { previousPathname } = useContext(AppContext)  
   
-  // Configuração do breadcrumb
   const breadcrumbItems = [
     {
       label: 'Artigos',

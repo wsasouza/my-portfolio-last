@@ -5,7 +5,7 @@ import { Layout } from '@/components/Layout'
 import { Particles } from '@/components/Particles'
 
 import '@/styles/tailwind.css'
-import '@/styles/prism.css'
+import '@/styles/globals.css'
 
 export const metadata: Metadata = {
   title: {

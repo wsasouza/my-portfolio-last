@@ -1,5 +1,5 @@
 import { db } from '@/lib/firebase-admin';
-import { DocumentData, Query } from 'firebase-admin/firestore';
+import { DocumentData } from 'firebase-admin/firestore';
 
 export interface Article {
   title: string;
@@ -49,24 +49,19 @@ export async function getPaginatedArticles(
   try {    
     const offset = (page - 1) * limit;    
     let totalCount: number;
-    let articles: ArticleWithSlug[] = [];
+    let articles: ArticleWithSlug[] = [];    
     
-    // Caso com filtro de tag
     if (tag && tag.trim() !== '') {
-      const normalizedTag = tag.trim().toLowerCase();
-      
-      // Para consultas filtradas, fazemos a consulta completa primeiro
+      const normalizedTag = tag.trim().toLowerCase();      
+     
       const filteredQuery = db.collection('articles')
         .where('tags', 'array-contains', normalizedTag)
-        .orderBy('date', 'desc');
+        .orderBy('date', 'desc');      
       
-      // Buscamos todos para contar
       const allMatchingDocs = await filteredQuery.get();
-      totalCount = allMatchingDocs.size;
+      totalCount = allMatchingDocs.size;      
       
-      // Se tiver resultados, aplicamos a paginação na memória para evitar consultas adicionais
-      if (totalCount > 0) {
-        // Para paginação, pegamos apenas os documentos que precisamos
+      if (totalCount > 0) {        
         const paginatedDocs = allMatchingDocs.docs.slice(offset, offset + limit);
         
         articles = paginatedDocs.map((doc: DocumentData) => ({
@@ -76,9 +71,8 @@ export async function getPaginatedArticles(
         })) as ArticleWithSlug[];
       }
     } 
-    // Caso sem filtro
-    else {
-      // Para consultas sem filtro, podemos usar o método count() e limit/offset
+    
+    else {     
       const countSnapshot = await db.collection('articles').count().get();
       totalCount = countSnapshot.data().count;
       

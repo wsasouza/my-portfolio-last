@@ -1,0 +1,99 @@
+/* 
+  Estilos para código destacado pelo Shiki 
+*/
+
+.shiki-highlighted {
+  margin: 0;
+  border-radius: 0.375rem;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  tab-size: 4;
+  overflow-x: auto;
+}
+
+.shiki-highlighted code {
+  display: grid;
+  padding: 1rem;
+  font-family: inherit;
+  counter-reset: line;
+}
+
+.code-block {
+  position: relative;
+  overflow-x: auto;
+  tab-size: 4;
+}
+
+/* Destaque de linhas */
+.line-highlighted {
+  background-color: rgba(255, 255, 255, 0.07);
+  display: block;
+  margin: 0 -1rem;
+  padding: 0 1rem;
+}
+
+/* Nome da linguagem */
+.language-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #d4d4d8;
+  margin-right: 0.5rem;
+}
+
+/* Nome do arquivo */
+.filename-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+/* Ajustes finos de contraste para os tokens */
+.shiki-highlighted .token.keyword {
+  color: #ff79c6;
+}
+
+.shiki-highlighted .token.string {
+  color: #f1fa8c;
+}
+
+.shiki-highlighted .token.function {
+  color: #8be9fd;
+}
+
+.shiki-highlighted .token.comment {
+  color: #6272a4;
+}
+
+.shiki-highlighted .token.number {
+  color: #bd93f9;
+}
+
+.shiki-highlighted .token.operator {
+  color: #ff79c6;
+}
+
+.shiki-highlighted .token.builtin {
+  color: #8be9fd;
+}
+
+.shiki-highlighted .token.class-name {
+  color: #8be9fd;
+}
+
+/* Tela escura */
+.dark .shiki-highlighted {
+  background-color: #09090b;
+}
+
+/* Tela clara */
+:not(.dark) .shiki-highlighted {
+  background-color: #09090b;
+  color: #f8f8f2;
+}

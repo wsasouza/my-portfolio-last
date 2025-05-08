@@ -6,10 +6,9 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Prose } from '@/components/Prose';
 import NextImage from 'next/image';
-import { Code } from '@/components/Code';
 import { CodeBlock } from '@/components/CodeBlock';
+import { normalizeMDXContent } from '@/utils/mdx-utils';
 
-// Componente básico para imagens
 const CustomImage = ({
   src,
   alt = '',
@@ -22,21 +21,41 @@ const CustomImage = ({
   if (!src) {
     return <span className="text-red-500">Imagem sem URL</span>;
   }
+  
+  const imageUrl = src.startsWith('/') || src.startsWith('http') 
+    ? src 
+    : `/${src}`;
 
-  return (
-    <div className="my-8">
-      <NextImage
-        src={src}
-        alt={alt || ''}
-        width={800}
-        height={500}
-        className="rounded-xl w-full h-auto"
-      />
-    </div>
-  );
+  try {
+    return (
+      <span className="block my-8">
+        <NextImage
+          src={imageUrl}
+          alt={alt || ''}
+          width={800}
+          height={500}
+          priority
+          className="rounded-xl w-full h-auto"
+          unoptimized={src.startsWith('http')}
+        />
+      </span>
+    );
+  } catch (error) {
+    console.error(`Erro ao renderizar imagem: ${src}`, error);
+   
+    return (
+      <span className="block my-8">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img 
+          src={imageUrl} 
+          alt={alt || ''} 
+          className="rounded-xl w-full h-auto" 
+        />
+      </span>
+    );
+  }
 };
 
-// Componente para links
 const CustomLink = ({
   href,
   children,
@@ -100,30 +119,40 @@ export function MDXRenderer({ content, images = {} }: MDXRendererProps) {
         setError('Conteúdo inválido');
         return;
       }
-
-      // Processar o markdown
-      let processedContent = removeFrontmatter(content);
-
-      // Remover importações, exportações e outros elementos JSX
-      processedContent = processedContent.replace(/^import\s+.*$/gm, '');
-      processedContent = processedContent.replace(/^export\s+.*$/gm, '');
       
-      // Substituir tags Image do Next.js por markdown padrão
+      let processedContent = removeFrontmatter(content);
+     
+      processedContent = normalizeMDXContent(processedContent);
+     
+      processedContent = processedContent.replace(/^import\s+.*$/gm, '');
+      processedContent = processedContent.replace(/^export\s+.*$/gm, '');      
+      
       Object.entries(images).forEach(([filename, url]) => {
-        // Corresponder tags Image com URL direta
-        processedContent = processedContent.replace(
-          new RegExp(`<Image[^>]*src=["']${url}["'][^>]*alt=["']([^"']*)["'][^>]*>`, 'gi'),
-          `![${filename}](${url})`
-        );
-        
-        // Corresponder tags Image com variáveis
-        processedContent = processedContent.replace(
-          new RegExp(`<Image[^>]*src=\\{[^}]+\\}[^>]*>`, 'gi'),
-          `![${filename}](${url})`
-        );
-      });
+        if (!url) {
+          console.warn(`URL não fornecida para a imagem: ${filename}`);
+          return;
+        }
 
-      console.log('Markdown processado (primeiros 100 caracteres):', processedContent.substring(0, 100));
+        try {         
+          processedContent = processedContent.replace(
+            new RegExp(`<Image[^>]*src=["']${url}["'][^>]*alt=["']([^"']*)["'][^>]*>`, 'gi'),
+            `![${filename}](${url})`
+          );          
+          
+          processedContent = processedContent.replace(
+            new RegExp(`<Image[^>]*src=\\{[^}]+\\}[^>]*>`, 'gi'),
+            `![${filename}](${url})`
+          );
+          
+          processedContent = processedContent.replace(
+            new RegExp(`!\\[(.*?)\\]\\(${filename}\\)`, 'gi'),
+            `![${filename}](${url})`
+          );
+        } catch (regexError) {
+          console.error(`Erro ao processar regex para imagem ${filename}:`, regexError);
+        }
+      });
+      
       setMarkdownContent(processedContent);
     } catch (error: any) {
       console.error('Erro ao processar conteúdo:', error);
@@ -132,19 +161,109 @@ export function MDXRenderer({ content, images = {} }: MDXRendererProps) {
       setIsLoading(false);
     }
   }, [content, images]);
-
-  // Componentes personalizados para ReactMarkdown
-  const components: Record<string, any> = {
-    img: ({ node, src, alt, ...props }: any) => (
-      <CustomImage src={src} alt={alt} {...props} />
-    ),
-    a: ({ node, href, children, ...props }: any) => (
-      <CustomLink href={href} {...props}>{children}</CustomLink>
-    ),
-    pre: ({ node, ...props }: any) => <CodeBlock {...props} />,
-    code: ({ node, inline, ...props }: any) => {
-      return inline ? <code {...props} /> : <Code {...props} />;
+  
+  const components = {    
+    p: ({ children, ...props }: any) => <p {...props}>{children}</p>,
+    h1: ({ children, ...props }: any) => <h1 {...props}>{children}</h1>,
+    h2: ({ children, ...props }: any) => <h2 {...props}>{children}</h2>,
+    h3: ({ children, ...props }: any) => <h3 {...props}>{children}</h3>,
+    h4: ({ children, ...props }: any) => <h4 {...props}>{children}</h4>,
+    h5: ({ children, ...props }: any) => <h5 {...props}>{children}</h5>,
+    h6: ({ children, ...props }: any) => <h6 {...props}>{children}</h6>,
+    ul: ({ children, ...props }: any) => <ul {...props}>{children}</ul>,
+    ol: ({ children, ...props }: any) => <ol {...props}>{children}</ol>,
+    li: ({ children, ...props }: any) => <li {...props}>{children}</li>,
+    blockquote: ({ children, ...props }: any) => <blockquote {...props}>{children}</blockquote>,    
+    
+    img: ({ node, src, alt, ...props }: any) => {
+      if (!src) return null;
+      return <CustomImage src={src} alt={alt} {...props} />;
     },
+    
+    a: ({ node, href, children, ...props }: any) => {
+      if (!href) return <span>{children}</span>;
+      return <CustomLink href={href} {...props}>{children}</CustomLink>;
+    },
+    
+    pre: ({ node, children, className, ...props }: any) => {     
+      let codeInfo = null;      
+      
+      if (node && node.children && node.children[0] && node.children[0].tagName === 'code') {
+        const codeNode = node.children[0];        
+        
+        if (codeNode.properties) {
+          if (codeNode.properties.className) {
+            const langClass = codeNode.properties.className.find((cls: string) => 
+              cls.startsWith('language-')
+            );
+            
+            if (langClass) {
+              codeInfo = {
+                language: langClass.replace('language-', ''),
+                className: langClass
+              };
+            }
+          }          
+          
+          if (codeNode.data && codeNode.data.meta) {
+            codeInfo = {
+              ...codeInfo,
+              metastring: codeNode.data.meta
+            };
+          }
+        }
+      }      
+      
+      const metastring = codeInfo?.metastring || props['data-meta'] || '';
+      const language = codeInfo?.language || '';
+      
+      return (
+        <CodeBlock 
+          metastring={metastring} 
+          className={codeInfo?.className || className || ''} 
+          language={language}
+          {...props}
+        >
+          {children}
+        </CodeBlock>
+      );
+    },
+    
+    code: ({ node, inline, className, children, ...props }: any) => {    
+      if (inline) {
+        return <code className={className} {...props}>{children}</code>;
+      }
+      
+      let language = '';
+      let metastring = '';      
+      
+      if (className && className.includes('language-')) {
+        language = className.replace('language-', '');
+      }      
+      
+      if (node && node.properties) {
+        metastring = node.properties['data-meta'] || '';
+      }      
+    
+      if (!metastring) {
+        metastring = props['data-meta'] || props['data-language'] || '';
+      }
+      
+      if (node && node.data && node.data.meta) {
+        metastring = node.data.meta;
+      }
+      
+      return (
+        <CodeBlock 
+          className={className} 
+          language={language} 
+          metastring={metastring}
+          {...props}
+        >
+          {children}
+        </CodeBlock>
+      );
+    }
   };
 
   if (isLoading) {
@@ -178,13 +297,16 @@ export function MDXRenderer({ content, images = {} }: MDXRendererProps) {
   return (
     <Prose className="mt-8">
       {markdownContent ? (
-        <ReactMarkdown 
-          remarkPlugins={[remarkGfm]} 
-          rehypePlugins={[rehypeRaw]} 
-          components={components}
-        >
-          {markdownContent}
-        </ReactMarkdown>
+        <div className="mdx-content">
+          <ReactMarkdown 
+            remarkPlugins={[remarkGfm]} 
+            rehypePlugins={[rehypeRaw]} 
+            components={components}
+            skipHtml={false}
+          >
+            {markdownContent}
+          </ReactMarkdown>
+        </div>
       ) : (
         <p>Nenhum conteúdo disponível</p>
       )}
@@ -192,59 +314,48 @@ export function MDXRenderer({ content, images = {} }: MDXRendererProps) {
   );
 }
 
-// Função para remover frontmatter
 function removeFrontmatter(content: string): string {
-  let processedContent = content;
+  let processedContent = content;  
   
-  // 1. Remover frontmatter YAML entre marcadores ---
   if (processedContent.startsWith('---')) {
     const endIndex = processedContent.indexOf('---', 3);
     
-    if (endIndex !== -1) {
-      // Captura o frontmatter para debug
+    if (endIndex !== -1) {      
       const frontmatter = processedContent.substring(3, endIndex);
-      console.log('Frontmatter encontrado e removido:', frontmatter);
-      
-      // Remove o frontmatter
+      console.log('Frontmatter encontrado e removido:', frontmatter);      
+    
       processedContent = processedContent.substring(endIndex + 3).trim();
     }
-  }
+  }  
   
-  // 2. Remover qualquer resíduo de frontmatter que tenha sido renderizado como texto
   const lines = processedContent.split('\n');
   const cleanedLines = [];
-  let inFrontmatterSection = false;
+  let inFrontmatterSection = false;  
   
-  // Percorrer as linhas e identificar possíveis frontmatter visíveis
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+    const line = lines[i].trim();    
     
-    // Verificar se é um marcador de frontmatter
     if (line === '---') {
       inFrontmatterSection = !inFrontmatterSection;
       continue;
-    }
+    }    
     
-    // Pular linhas que parecem ser campos de frontmatter
     if (
       line.startsWith('title:') || 
       line.startsWith('description:') || 
       line.startsWith('author:') || 
       line.startsWith('date:') || 
       line.startsWith('slug:') ||
-      line.match(/^[a-zA-Z_]+:\s.*$/) // Qualquer linha que pareça ser um campo de frontmatter
-    ) {
-      console.log('Linha de frontmatter removida:', line);
+      line.match(/^[a-zA-Z_]+:\s.*$/)
+    ) {      
       continue;
-    }
+    }    
     
-    // Adicionar a linha se não for parte do frontmatter
     if (!inFrontmatterSection) {
       cleanedLines.push(lines[i]);
     }
-  }
+  }  
   
-  // Remover linhas vazias no início
   while (cleanedLines.length > 0 && cleanedLines[0].trim() === '') {
     cleanedLines.shift();
   }

@@ -21,8 +21,7 @@ export function Breadcrumb({
   homeHref = '/' 
 }: BreadcrumbProps) {
   const [mounted, setMounted] = useState(false);
-
-  // Resolver problema de hidratação
+  
   useEffect(() => {
     setMounted(true);
   }, []);
