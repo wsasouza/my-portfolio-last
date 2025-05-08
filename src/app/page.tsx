@@ -9,6 +9,7 @@ import {
   GitHubIcon,
   InstagramIcon,
   LinkedInIcon,
+  WhatsAppIcon,
   XIcon,
 } from '@/components/SocialIcons'
 import logoAirbnb from '@/images/logos/airbnb.svg'
@@ -20,8 +21,9 @@ import image2 from '@/images/photos/image-2.jpg'
 import image3 from '@/images/photos/image-3.jpg'
 import image4 from '@/images/photos/image-4.jpg'
 import image5 from '@/images/photos/image-5.jpg'
-import { type ArticleWithSlug, getAllArticles } from '@/lib/articles'
+import { type ArticleWithSlug, getPaginatedArticles } from '@/lib/articles'
 import { formatDate } from '@/lib/formatDate'
+import { info } from '@/utils/info'
 
 function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -85,14 +87,14 @@ function ArrowDownIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 function Article({ article }: { article: ArticleWithSlug }) {
   return (
     <Card as="article">
-      <Card.Title href={`/articles/${article.slug}`}>
+      <Card.Title href={`/artigos/${article.slug}`}>
         {article.title}
       </Card.Title>
       <Card.Eyebrow as="time" dateTime={article.date} decorate>
         {formatDate(article.date)}
       </Card.Eyebrow>
       <Card.Description>{article.description}</Card.Description>
-      <Card.Cta>Read article</Card.Cta>
+      <Card.Cta>Leia o artigo</Card.Cta>
     </Card>
   )
 }
@@ -104,7 +106,7 @@ function SocialLink({
   icon: React.ComponentType<{ className?: string }>
 }) {
   return (
-    <Link className="group -m-1 p-1" {...props}>
+    <Link className="group -m-1 p-1" {...props} target="_blank" rel="noopener noreferrer">
       <Icon className="h-6 w-6 fill-zinc-500 transition group-hover:fill-zinc-600 dark:fill-zinc-400 dark:group-hover:fill-zinc-300" />
     </Link>
   )
@@ -266,37 +268,38 @@ function Photos() {
 }
 
 export default async function Home() {
-  let articles = (await getAllArticles()).slice(0, 4)
+  const { articles } = await getPaginatedArticles(1, 4);
 
   return (
     <>
       <Container className="mt-9">
         <div className="max-w-2xl">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-800 sm:text-5xl dark:text-zinc-100">
-            Software designer, founder, and amateur astronaut.
+          Desenvolvedor full-stack, empreendedor e corredor amador.
           </h1>
           <p className="mt-6 text-base text-zinc-600 dark:text-zinc-400">
-            I’m Spencer, a software designer and entrepreneur based in New York
-            City. I’m the founder and CEO of Planetaria, where we develop
-            technologies that empower regular people to explore space on their
-            own terms.
+          Sou Walter Souza, criador da Up Web Studio e apaixonado por transformar idéias em produtos digitais. Ajudo startups a lançarem MVPs inteligentes e empresas locais a conquistarem presença digital com qualidade, performance e propósito — com o mesmo foco e determinação que me movem nos meus treinos como corredor amador.
           </p>
           <div className="mt-6 flex gap-6">
-            <SocialLink href="#" aria-label="Follow on X" icon={XIcon} />
             <SocialLink
-              href="#"
-              aria-label="Follow on Instagram"
+              href={info.instagram}
+              aria-label="Me siga no Instagram"
               icon={InstagramIcon}
             />
             <SocialLink
-              href="#"
-              aria-label="Follow on GitHub"
+              href={info.github}
+              aria-label="Me siga no GitHub"
               icon={GitHubIcon}
             />
             <SocialLink
-              href="#"
-              aria-label="Follow on LinkedIn"
+              href={info.linkedin}
+              aria-label="Me siga no LinkedIn"
               icon={LinkedInIcon}
+            />
+            <SocialLink
+              href={info.whatsapp}
+              aria-label="Fale comigo no WhatsApp"
+              icon={WhatsAppIcon}
             />
           </div>
         </div>
@@ -308,6 +311,13 @@ export default async function Home() {
             {articles.map((article) => (
               <Article key={article.slug} article={article} />
             ))}
+            {articles.length > 0 && (
+              <div className="flex justify-center">
+                <Button href="/artigos" variant="secondary">
+                  Ver todos os artigos
+                </Button>
+              </div>
+            )}
           </div>
           <div className="space-y-10 lg:pl-16 xl:pl-24">
             <Newsletter />

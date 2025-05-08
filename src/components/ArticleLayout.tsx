@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { AppContext } from '@/app/providers'
 import { Container } from '@/components/Container'
 import { Prose } from '@/components/Prose'
+import { Breadcrumb } from '@/components/Breadcrumb'
 import { type ArticleWithSlug } from '@/lib/articles'
 import { formatDate } from '@/lib/formatDate'
 
@@ -30,7 +31,18 @@ export function ArticleLayout({
   children: React.ReactNode
 }) {
   let router = useRouter()
-  let { previousPathname } = useContext(AppContext)
+  let { previousPathname } = useContext(AppContext)  
+  
+  const breadcrumbItems = [
+    {
+      label: 'Artigos',
+      href: '/artigos',
+    },
+    {
+      label: article.title,
+      href: `/artigos/${article.slug}`,
+    },
+  ]
 
   return (
     <Container className="mt-16 lg:mt-32">
@@ -46,6 +58,10 @@ export function ArticleLayout({
               <ArrowLeftIcon className="h-4 w-4 stroke-zinc-500 transition group-hover:stroke-zinc-700 dark:stroke-zinc-500 dark:group-hover:stroke-zinc-400" />
             </button>
           )}
+          
+          {/* Adicionar breadcrumb */}
+          <Breadcrumb items={breadcrumbItems} />
+          
           <article>
             <header className="flex flex-col">
               <h1 className="mt-6 text-4xl font-bold tracking-tight text-zinc-800 sm:text-5xl dark:text-zinc-100">

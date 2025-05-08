@@ -3,6 +3,7 @@
 import { createContext, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { ThemeProvider, useTheme } from 'next-themes'
+import ShikiProvider from '@/components/ShikiProvider'
 
 function usePrevious<T>(value: T) {
   let ref = useRef<T>()
@@ -22,8 +23,8 @@ function ThemeWatcher() {
 
     function onMediaChange() {
       let systemTheme = media.matches ? 'dark' : 'light'
-      if (resolvedTheme === systemTheme) {
-        setTheme('system')
+      if (resolvedTheme === 'system') {
+        setTheme(systemTheme)
       }
     }
 
@@ -48,7 +49,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{ previousPathname }}>
       <ThemeProvider attribute="class" disableTransitionOnChange>
         <ThemeWatcher />
-        {children}
+        <ShikiProvider>
+          {children}
+        </ShikiProvider>
       </ThemeProvider>
     </AppContext.Provider>
   )
