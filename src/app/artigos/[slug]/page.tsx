@@ -89,6 +89,19 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           </time>
         </div>
         
+        {article.tags && article.tags.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {article.tags.map((tag) => (
+              <span 
+                key={tag} 
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+        
         <div className="mt-8">
           <p className="text-lg text-zinc-600 dark:text-zinc-400">
             {article.description}
@@ -121,6 +134,11 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                   <p>Data: {article.date}</p>
                   <p>Comprimento do conteúdo: {content.length} caracteres</p>
                   <p>Imagens: {hasImages ? Object.keys(article.imageUrls || {}).length : 0}</p>
+                  {article.tags && article.tags.length > 0 && (
+                    <div>
+                      <p>Tags: {article.tags.join(', ')}</p>
+                    </div>
+                  )}
                   
                   {/* Debug de frontmatter */}
                   <details className="mt-2 mb-2">

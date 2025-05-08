@@ -17,6 +17,7 @@ interface ArticleEditorProps {
     content?: string;
     slug?: string;
     imageUrls?: Record<string, string>;
+    tags?: string[];
   } | null;
 }
 
@@ -28,6 +29,7 @@ interface ArticleData {
   slug: string;
   content: string;
   imageUrls: Record<string, string>;
+  tags?: string[];
   id?: string; 
 }
 
@@ -38,6 +40,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
   const [author, setAuthor] = useState(article?.author || '');
   const [date, setDate] = useState(article?.date || new Date().toISOString().split('T')[0]);
   const [content, setContent] = useState(article?.content || '');
+  const [tagsInput, setTagsInput] = useState(article?.tags?.join(', ') || '');
   const [images, setImages] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,6 +58,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       setDate(article.date || '');
       setContent(article.content || '');
       setExistingImages(article.imageUrls || {});
+      setTagsInput(article.tags?.join(', ') || '');
     }
   }, [article]);
 
@@ -118,6 +122,15 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
     return uploadedImagesMap;
   };
 
+  const parseTags = (tagsString: string): string[] => {
+    if (!tagsString.trim()) return [];
+    
+    return tagsString
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
+  };
+
   const saveArticle = async () => {
     try {
       setIsLoading(true);
@@ -133,7 +146,9 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
       
       const uploadedImagesMap = images.length > 0 ? await uploadImagesToFirebase() : {};      
       
-      const allImages = { ...existingImages, ...uploadedImagesMap };      
+      const allImages = { ...existingImages, ...uploadedImagesMap };  
+      
+      const tags = parseTags(tagsInput);    
       
       const articleData: ArticleData = {
         title,
@@ -143,6 +158,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
         slug,
         content,
         imageUrls: allImages,
+        tags: tags.length > 0 ? tags : undefined,
       };      
       
       if (article?.id) {        
@@ -258,6 +274,20 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
               className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700"
             />
           </div>
+        </div>
+        
+        <div>
+          <label className="block mb-2">Tags (separadas por vírgula)</label>
+          <input
+            type="text"
+            value={tagsInput}
+            onChange={(e) => setTagsInput(e.target.value)}
+            placeholder="frontend, backend, javascript, etc."
+            className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700"
+          />
+          <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+            Ex: frontend, backend, devops, typescript
+          </p>
         </div>
         
         <div>

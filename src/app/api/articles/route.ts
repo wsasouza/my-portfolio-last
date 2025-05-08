@@ -128,7 +128,17 @@ export async function POST(request: Request) {
     const author = formData.get('author') as string;
     const date = formData.get('date') as string;
     const slug = formData.get('slug') as string;
-    const content = formData.get('content') as string;    
+    const content = formData.get('content') as string;
+    const tagsJson = formData.get('tags') as string;
+    let tags: string[] = [];
+
+    if (tagsJson) {
+      try {
+        tags = JSON.parse(tagsJson);
+      } catch (e) {
+        console.error('Erro ao fazer parse das tags:', e);
+      }
+    }    
     
     const imageFiles = formData.getAll('images') as File[];
     const imageUrls: Record<string, string> = {};    
@@ -177,6 +187,7 @@ export async function POST(request: Request) {
       slug, 
       content: mdxContent,
       imageUrls,
+      tags: tags.length > 0 ? tags : undefined,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     
@@ -199,7 +210,17 @@ export async function PUT(request: Request) {
     const description = formData.get('description') as string;
     const author = formData.get('author') as string;
     const date = formData.get('date') as string;
-    const content = formData.get('content') as string;    
+    const content = formData.get('content') as string;
+    const tagsJson = formData.get('tags') as string;
+    let tags: string[] = [];
+
+    if (tagsJson) {
+      try {
+        tags = JSON.parse(tagsJson);
+      } catch (e) {
+        console.error('Erro ao fazer parse das tags:', e);
+      }
+    }
     
     const existingImagesJson = formData.get('existingImages') as string;
     let existingImageUrls: Record<string, string> = {};
@@ -249,9 +270,10 @@ export async function PUT(request: Request) {
       description,
       author,
       date,
-      slug, 
+      slug,
       content: mdxContent,
       imageUrls,
+      tags: tags.length > 0 ? tags : undefined,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     

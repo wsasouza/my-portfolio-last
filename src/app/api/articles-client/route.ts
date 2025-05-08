@@ -11,6 +11,7 @@ interface ArticleData {
   slug: string;
   content: string;
   imageUrls: Record<string, string>;
+  tags?: string[];
 }
 
 function generateMDXContent({
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
   try {
     const articleData: ArticleData = await request.json();
     
-    const { title, description, author, date, slug, content, imageUrls } = articleData;    
+    const { title, description, author, date, slug, content, imageUrls, tags } = articleData;    
     
     const mdxContent = generateMDXContent({
       title,
@@ -74,6 +75,7 @@ export async function POST(request: Request) {
       slug, 
       content: mdxContent,
       imageUrls,
+      tags,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     
@@ -91,7 +93,7 @@ export async function PUT(request: Request) {
   try {
     const articleData: ArticleData = await request.json();
     
-    const { id, title, description, author, date, slug, content, imageUrls } = articleData;
+    const { id, title, description, author, date, slug, content, imageUrls, tags } = articleData;
     
     if (!id) {
       return NextResponse.json(
@@ -117,6 +119,7 @@ export async function PUT(request: Request) {
       slug, 
       content: mdxContent,
       imageUrls,
+      tags,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     

@@ -8,6 +8,7 @@ export interface Article {
   date: string;
   content?: string;
   imageUrls?: Record<string, string>;
+  tags?: string[];
 }
 
 export interface ArticleWithSlug extends Article {
