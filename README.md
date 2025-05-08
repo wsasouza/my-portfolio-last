@@ -47,14 +47,12 @@ npm run dev
 
 5. Acesse [http://localhost:3000](http://localhost:3000) no seu navegador.
 
-## Contato
+## :memo: License
 
-- WhatsApp: [https://wa.me/5516999871407](https://wa.me/5516999871407)
-- Instagram: [https://www.instagram.com/waltersantosasouza](https://www.instagram.com/waltersantosasouza)
-- LinkedIn: [https://www.linkedin.com/in/waltersasouza](https://www.linkedin.com/in/waltersasouza)
-- GitHub: [https://github.com/wsasouza](https://github.com/wsasouza)
-- Email: [upwebstudiobr@gmail.com](mailto:upwebstudiobr@gmail.com)
+This project is under license from MIT. For more details, see the [LICENSE](LICENSE.md) file.
 
-## Licença
+Made with :heart: by <a href="https://github.com/wsasouza" target="_blank">Walter Santos de Andrade Souza</a>
 
-Este projeto é de propriedade de Walter Santos de Andrade Souza e não deve ser utilizado, copiado ou distribuído sem autorização expressa.
+&#xa0;
+
+<a href="#top">Back to top</a>
