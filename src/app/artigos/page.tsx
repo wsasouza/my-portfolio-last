@@ -10,6 +10,8 @@ import { type ArticleWithSlug } from '@/lib/articles'
 import { formatDate } from '@/lib/formatDate'
 import { Pagination } from '@/components/Pagination'
 
+export const dynamic = 'force-dynamic';
+
 const breadcrumbItems = [
   {
     label: 'Artigos',
@@ -241,5 +243,5 @@ export default function ArticlesIndex() {
         />
       </div>
     </SimpleLayout>
-  )
+  );
 }
