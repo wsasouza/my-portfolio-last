@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import slugify from 'slugify';
+
 import useFirebaseStorage from '@/hooks/useFirebaseStorage';
-import { insertImageInEditor, insertNextImageInEditor } from '@/utils/image-editor';
+import { insertImageInEditor } from '@/utils/image-editor';
 
 interface ArticleEditorProps {
   article?: {

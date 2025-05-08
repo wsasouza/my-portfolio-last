@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import ArticleEditor from '@/components/ArticleEditor';
 import { SimpleLayout } from '@/components/SimpleLayout';
+import { ArticlesLoading } from '@/components/ArticlesLoading';
 
 export default function EditArticlePage() {
   const params = useParams();
-  const [article, setArticle] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [article, setArticle] = useState(null);  
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -25,9 +25,7 @@ export default function EditArticlePage() {
       } catch (err: any) {
         setError(err.message);
         console.error('Erro ao buscar artigo:', err);
-      } finally {
-        setIsLoading(false);
-      }
+      } 
     };
     
     if (params.slug) {
@@ -35,17 +33,19 @@ export default function EditArticlePage() {
     }
   }, [params.slug]);  
 
-  return <SimpleLayout title="Editar Artigo" intro="Edições dos artigos">
-    {isLoading ? (
-      <div className="container mx-auto py-8 px-4">Carregando...</div>
-    ) : error ? (
-      <div className="container mx-auto py-8 px-4">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
+  return (
+    <SimpleLayout title="Editar Artigo" intro="Edições dos artigos">
+      {error ? (
+        <div className="container mx-auto py-8 px-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
         </div>
-      </div>
-    ) : (
-      <ArticleEditor article={article} />
-    )}
-  </SimpleLayout>;
+      ) : (
+        <Suspense fallback={<ArticlesLoading />}>
+          <ArticleEditor article={article} />
+        </Suspense>
+      )}
+    </SimpleLayout>
+  );
 } 

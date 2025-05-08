@@ -22,9 +22,8 @@ export function Pagination({ currentPage, totalPages, baseUrl = '' }: Pagination
   
   const goToPage = (pageNumber: number) => {
     router.push(createPageURL(pageNumber));
-  };
+  };  
   
-  // Não renderizar a paginação se tivermos apenas uma página
   if (totalPages <= 1) return null;
 
   return (
@@ -38,21 +37,15 @@ export function Pagination({ currentPage, totalPages, baseUrl = '' }: Pagination
       </Button>
       
       <div className="flex gap-1">
-        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-          // Lógica para exibir no máximo 5 páginas, centradas na página atual
-          let pageNumber;
-          
-          if (totalPages <= 5) {
-            // Se tivermos 5 ou menos páginas, mostrar todas
+        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {          
+          let pageNumber;          
+          if (totalPages <= 5) {            
             pageNumber = i + 1;
-          } else if (currentPage <= 3) {
-            // Se estamos nas primeiras páginas, mostrar 1-5
+          } else if (currentPage <= 3) {           
             pageNumber = i + 1;
-          } else if (currentPage >= totalPages - 2) {
-            // Se estamos nas últimas páginas, mostrar as últimas 5
+          } else if (currentPage >= totalPages - 2) {            
             pageNumber = totalPages - 4 + i;
-          } else {
-            // No meio, centrar na página atual
+          } else {            
             pageNumber = currentPage - 2 + i;
           }
           

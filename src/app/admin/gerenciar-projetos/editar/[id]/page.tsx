@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import ProjectEditor from '@/components/ProjectEditor';
 import { SimpleLayout } from '@/components/SimpleLayout';
+import { ProjectsLoading } from '@/components/ProjectsLoading';
 
 export default function EditProjectPage() {
   const params = useParams();
-  const [project, setProject] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [project, setProject] = useState(null);  
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -25,9 +25,7 @@ export default function EditProjectPage() {
       } catch (err: any) {
         setError(err.message);
         console.error('Erro ao buscar projeto:', err);
-      } finally {
-        setIsLoading(false);
-      }
+      } 
     };
     
     if (params.id) {
@@ -35,9 +33,7 @@ export default function EditProjectPage() {
     }
   }, [params.id]);
 
-  if (isLoading) {
-    return <div className="container mx-auto py-8 px-4">Carregando...</div>;
-  }
+  
 
   if (error) {
     return (
@@ -49,5 +45,19 @@ export default function EditProjectPage() {
     );
   }
 
-  return <SimpleLayout title="Editar Projeto" intro="Edite as informações do projeto"><ProjectEditor project={project} /></SimpleLayout>;
+  return (
+    <SimpleLayout title="Editar Projeto" intro="Edite as informações do projeto">
+      {error ? (
+        <div className="container mx-auto py-8 px-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        </div>
+      ) : (
+        <Suspense fallback={<ProjectsLoading />}>
+          <ProjectEditor project={project} />
+        </Suspense>
+      )}
+    </SimpleLayout>
+  );
 } 

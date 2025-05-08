@@ -1,7 +1,6 @@
+import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getArticleBySlug } from '@/lib/articles';
-import { Metadata } from 'next';
-import { Prose } from '@/components/Prose';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { MDXRenderer } from '@/components/MDXRenderer';
 import { debugMDXContent } from '@/utils/debug-mdx';

@@ -97,15 +97,12 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
         return;
       }
       
-      const slug = slugify(name, { lower: true });
+      const slug = slugify(name, { lower: true });      
       
-      // Upload do logo para o Firebase Storage
-      const logoUrl = await uploadLogoToFirebase(slug);
+      const logoUrl = await uploadLogoToFirebase(slug);      
       
-      // Processar tags
-      const tags = parseTags(tagsInput);
+      const tags = parseTags(tagsInput);      
       
-      // Preparar dados do projeto
       const projectData: ProjectData = {
         name,
         description,
@@ -115,14 +112,12 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
         },
         logo: logoUrl || undefined,
         tags: tags.length > 0 ? tags : undefined,
-      };
+      };      
       
-      // Se estiver editando um projeto existente, adicione o ID
       if (project?.id) {
         projectData.id = project.id;
-      }
+      }      
       
-      // Enviar dados do projeto para a API
       const response = await fetch(`/api/projects`, {
         method: project ? 'PUT' : 'POST',
         headers: {
@@ -145,8 +140,7 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
       setIsLoading(false);
     }
   };
-
-  // Limpar a URL do objeto ao desmontar o componente
+  
   useEffect(() => {
     return () => {
       if (logoPreview && logoFile) {

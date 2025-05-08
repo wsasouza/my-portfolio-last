@@ -15,41 +15,6 @@ interface CodeProps {
   value?: string;
 }
 
-function safeLogObject(obj: any): any {
-  if (!obj || typeof obj !== 'object') {
-    return obj;
-  }  
-  
-  const safeObj: Record<string, any> = {};
-  
-  try {    
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        const value = obj[key];
-        if (key === 'children' || key === '_owner' || key === '_store' || key === '_self' || key === '_source') {         
-          safeObj[key] = typeof value;
-        } else if (typeof value !== 'object' || value === null) {          
-          safeObj[key] = value;
-        } else if (Array.isArray(value)) {
-          safeObj[key] = `Array(${value.length})`;
-        } else {         
-          safeObj[key] = `${typeof value}`;
-        }
-      }
-    }    
-    
-    if (obj.type && typeof obj.type === 'string') {
-      safeObj.type = obj.type;
-    } else if (obj.type && typeof obj.type === 'function') {
-      safeObj.type = obj.type.name || 'FunctionComponent';
-    }
-    
-    return safeObj;
-  } catch (err) {    
-    return { error: 'Não foi possível serializar o objeto', objectType: typeof obj };
-  }
-}
-
 function extractTextFromReactChildren(children: any): string {  
   if (typeof children === 'string') {
     return children;

@@ -1,18 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
 import admin from '@/lib/firebase-admin';
-
-interface ArticleData {
-  id?: string;
-  title: string;
-  description: string;
-  author: string;
-  date: string;
-  slug: string;
-  content: string;
-  imageUrls: Record<string, string>;
-  tags?: string[];
-}
+import { ArticleData } from '@/types/articles';
 
 function generateMDXContent({
   title,

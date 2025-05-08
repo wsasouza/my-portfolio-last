@@ -11,8 +11,7 @@ import { normalizeMDXContent } from '@/utils/mdx-utils';
 
 const CustomImage = ({
   src,
-  alt = '',
-  ...props
+  alt = '',  
 }: {
   src?: string;
   alt?: string;
