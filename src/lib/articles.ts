@@ -1,5 +1,5 @@
 import { db } from '@/lib/firebase-admin';
-import { DocumentData } from 'firebase-admin/firestore';
+import { DocumentData, Query } from 'firebase-admin/firestore';
 
 export interface Article {
   title: string;
@@ -41,24 +41,61 @@ export async function getAllArticles(): Promise<ArticleWithSlug[]> {
   }
 }
 
-export async function getPaginatedArticles(page: number = 1, limit: number = 4): Promise<PaginatedArticles> {
+export async function getPaginatedArticles(
+  page: number = 1, 
+  limit: number = 4, 
+  tag?: string
+): Promise<PaginatedArticles> {
   try {    
-    const countSnapshot = await db.collection('articles').count().get();
-    const totalCount = countSnapshot.data().count;    
-    
     const offset = (page - 1) * limit;    
+    let totalCount: number;
+    let articles: ArticleWithSlug[] = [];
     
-    const articlesSnapshot = await db.collection('articles')
-      .orderBy('date', 'desc')
-      .limit(limit)
-      .offset(offset)
-      .get();
-    
-    const articles = articlesSnapshot.docs.map((doc: DocumentData) => ({
-      id: doc.id, 
-      slug: doc.data().slug, 
-      ...doc.data(),
-    })) as ArticleWithSlug[];
+    // Caso com filtro de tag
+    if (tag && tag.trim() !== '') {
+      const normalizedTag = tag.trim().toLowerCase();
+      
+      // Para consultas filtradas, fazemos a consulta completa primeiro
+      const filteredQuery = db.collection('articles')
+        .where('tags', 'array-contains', normalizedTag)
+        .orderBy('date', 'desc');
+      
+      // Buscamos todos para contar
+      const allMatchingDocs = await filteredQuery.get();
+      totalCount = allMatchingDocs.size;
+      
+      // Se tiver resultados, aplicamos a paginação na memória para evitar consultas adicionais
+      if (totalCount > 0) {
+        // Para paginação, pegamos apenas os documentos que precisamos
+        const paginatedDocs = allMatchingDocs.docs.slice(offset, offset + limit);
+        
+        articles = paginatedDocs.map((doc: DocumentData) => ({
+          id: doc.id,
+          slug: doc.data().slug,
+          ...doc.data(),
+        })) as ArticleWithSlug[];
+      }
+    } 
+    // Caso sem filtro
+    else {
+      // Para consultas sem filtro, podemos usar o método count() e limit/offset
+      const countSnapshot = await db.collection('articles').count().get();
+      totalCount = countSnapshot.data().count;
+      
+      if (totalCount > 0) {
+        const articlesSnapshot = await db.collection('articles')
+          .orderBy('date', 'desc')
+          .limit(limit)
+          .offset(offset)
+          .get();
+        
+        articles = articlesSnapshot.docs.map((doc: DocumentData) => ({
+          id: doc.id, 
+          slug: doc.data().slug, 
+          ...doc.data(),
+        })) as ArticleWithSlug[];
+      }
+    }
     
     const hasMore = offset + articles.length < totalCount;
     

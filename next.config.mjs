@@ -20,6 +20,21 @@ const nextConfig = {
       }
     ],
   },
+  webpack: (config) => {
+    // Habilitar WebAssembly
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+    };
+    
+    // Configurar regra para arquivos .wasm
+    config.module.rules.push({
+      test: /\.wasm$/,
+      type: 'webassembly/async',
+    });
+    
+    return config;
+  },
 }
 
 const withMDX = nextMDX({

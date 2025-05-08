@@ -127,7 +127,7 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
     
     return tagsString
       .split(',')
-      .map(tag => tag.trim())
+      .map(tag => tag.trim().toLowerCase())
       .filter(tag => tag.length > 0);
   };
 
