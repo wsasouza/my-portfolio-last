@@ -169,8 +169,8 @@ export function MDXRenderer({ content, images = {} }: MDXRendererProps) {
     h4: ({ children, ...props }: any) => <h4 {...props}>{children}</h4>,
     h5: ({ children, ...props }: any) => <h5 {...props}>{children}</h5>,
     h6: ({ children, ...props }: any) => <h6 {...props}>{children}</h6>,
-    ul: ({ children, ...props }: any) => <ul {...props}>{children}</ul>,
-    ol: ({ children, ...props }: any) => <ol {...props}>{children}</ol>,
+    ul: ({ children, ...props }: any) => <ul className='list-disc -space-y-3' {...props}>{children}</ul>,
+    ol: ({ children, ...props }: any) => <ol className='list-decimal -space-y-3' {...props}>{children}</ol>,
     li: ({ children, ...props }: any) => <li {...props}>{children}</li>,
     blockquote: ({ children, ...props }: any) => <blockquote {...props}>{children}</blockquote>,    
     

@@ -178,7 +178,7 @@ export function Code(props: CodeProps) {
             <span className="text-zinc-400">{filename}</span>
           )}
           {lang && (
-            <span className="rounded bg-zinc-800 px-2 py-1 text-xs font-medium text-zinc-200 capitalize">
+            <span className="rounded bg-zinc-800 px-2 py-1 text-xs font-medium text-zinc-200">
               {lang}
             </span>
           )}
