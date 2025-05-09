@@ -30,7 +30,9 @@ export function ArticlesContent() {
     async function fetchArticles() {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/articles-filter?page=${currentPage}&limit=4${tagFilter ? `&tag=${encodeURIComponent(tagFilter)}` : ''}`);
+        const response = await fetch(`/api/articles-filter?page=${currentPage}&limit=4${tagFilter ? `&tag=${encodeURIComponent(tagFilter)}` : ''}`, {
+          cache: 'force-cache'
+        });
         
         if (!response.ok) {
           throw new Error('Falha ao buscar artigos');

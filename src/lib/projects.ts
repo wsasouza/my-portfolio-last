@@ -1,3 +1,5 @@
+'use server';
+
 import { db } from '@/lib/firebase-admin';
 import { DocumentData } from 'firebase-admin/firestore';
 

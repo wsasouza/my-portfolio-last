@@ -3,7 +3,7 @@ import { SimpleLayout } from '@/components/SimpleLayout';
 
 export default function NewArticlePage() {
   return (
-    <SimpleLayout title="Novo Artigo" intro="Criação de novos artigos">
+    <SimpleLayout title="Novo Artigo" intro="Criar novo artigo">
       <ArticleEditor />
     </SimpleLayout>
   );
