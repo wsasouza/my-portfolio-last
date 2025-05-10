@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db, storage } from '@/lib/firebase-admin';
 import admin from '@/lib/firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
+import { DocumentData } from 'firebase-admin/firestore';
 
 function getPublicStorageUrl(fileName: string): string {
   const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -71,49 +72,65 @@ date: "${date}"
 }
 
 export async function GET(request: Request) {
-  try {    
-    const url = new URL(request.url);
-    const page = parseInt(url.searchParams.get('page') || '1', 10);
-    const limit = parseInt(url.searchParams.get('limit') || '4', 10);
+  try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '4');
+    const tag = searchParams.get('tag') || '';
+    
+    const offset = (page - 1) * limit;
+    let totalCount: number;
+    let articles = [];
+    
+    if (tag && tag.trim() !== '') {
+      const normalizedTag = tag.trim().toLowerCase();
+      
+      const filteredQuery = db.collection('articles')
+        .where('tags', 'array-contains', normalizedTag)
+        .orderBy('date', 'desc');
+      
+      const allMatchingDocs = await filteredQuery.get();
+      totalCount = allMatchingDocs.size;
+      
+      if (totalCount > 0) {
+        const paginatedDocs = allMatchingDocs.docs.slice(offset, offset + limit);
         
-    const validatedLimit = Math.min(Math.max(1, limit), 20); 
-    const validatedPage = Math.max(1, page);    
-    
-    const offset = (validatedPage - 1) * validatedLimit;    
-    
-    const countSnapshot = await db.collection('articles').count().get();
-    const totalCount = countSnapshot.data().count;    
-    
-    const articlesSnapshot = await db.collection('articles')
-      .orderBy('date', 'desc')
-      .limit(validatedLimit)
-      .offset(offset)
-      .get();
-    
-    const articles = articlesSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id, 
-        slug: data.slug, 
-        ...data,
-      };
-    });    
+        articles = paginatedDocs.map((doc: DocumentData) => ({
+          id: doc.id,
+          slug: doc.data().slug,
+          ...doc.data(),
+        }));
+      }
+    } else {
+      const countSnapshot = await db.collection('articles').count().get();
+      totalCount = countSnapshot.data().count;
+      
+      if (totalCount > 0) {
+        const articlesSnapshot = await db.collection('articles')
+          .orderBy('date', 'desc')
+          .limit(limit)
+          .offset(offset)
+          .get();
+        
+        articles = articlesSnapshot.docs.map((doc: DocumentData) => ({
+          id: doc.id,
+          slug: doc.data().slug,
+          ...doc.data(),
+        }));
+      }
+    }
     
     const hasMore = offset + articles.length < totalCount;
     
     return NextResponse.json({
       articles,
-      pagination: {
-        page: validatedPage,
-        limit: validatedLimit,
-        totalCount,
-        totalPages: Math.ceil(totalCount / validatedLimit),
-        hasMore
-      }
+      totalCount,
+      hasMore
     });
   } catch (error) {
+    console.error('Erro ao buscar artigos do Firestore:', error);
     return NextResponse.json(
-      { error: 'Falha ao buscar artigos' },
+      { error: 'Erro ao buscar artigos' },
       { status: 500 }
     );
   }

@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Pagination } from "./Pagination";
-import { type ArticleWithSlug } from '@/lib/articles';
 import { SearchIcon } from "./Icons";
 import { Article } from "./Article";
+import { useArticles } from "@/hooks/useArticles";
 
 export function ArticlesContent() {
   const router = useRouter();
@@ -20,36 +20,16 @@ export function ArticlesContent() {
   );
   const [tagFilter, setTagFilter] = useState(tagParam || '');
   const [inputValue, setInputValue] = useState(tagParam || '');
-  const [articles, setArticles] = useState<ArticleWithSlug[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   
+  const { data, isLoading } = useArticles({
+    page: currentPage,
+    limit: 4,
+    tag: tagFilter
+  });
+  
+  const articles = data?.articles || [];
+  const totalCount = data?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / 4);
-
-  useEffect(() => {
-    async function fetchArticles() {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`/api/articles-filter?page=${currentPage}&limit=4${tagFilter ? `&tag=${encodeURIComponent(tagFilter)}` : ''}`, {
-          cache: 'force-cache'
-        });
-        
-        if (!response.ok) {
-          throw new Error('Falha ao buscar artigos');
-        }
-        
-        const data = await response.json();
-        setArticles(data.articles);
-        setTotalCount(data.pagination.totalCount);
-      } catch (error) {
-        console.error('Erro ao buscar artigos:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
-    fetchArticles();
-  }, [currentPage, tagFilter]);
 
   useEffect(() => {    
     const params = new URLSearchParams();

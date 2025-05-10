@@ -1,75 +1,35 @@
 'use client'
 
 import { formatDate } from "@/lib/formatDate";
-import { Article } from "@/types/articles";
-import { PaginationInfo } from "@/types/pagination";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Pagination } from "./Pagination";
+import { useArticles } from "@/hooks/useArticles";
+import { useDeleteArticle } from "@/hooks/useArticleMutations";
 
 export function AdminArticlesContent() {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    page: 1,
-    limit: 5,
-    totalCount: 0,
-    totalPages: 1,
-    hasMore: false
-  });
-  
   const searchParams = useSearchParams();
   const currentPage = parseInt(searchParams.get('pagina') || '1', 10);
+  
+  const { data, isLoading, error } = useArticles({
+    page: currentPage,
+    limit: 5
+  });
+  
+  const deleteArticleMutation = useDeleteArticle();
+  
+  const articles = data?.articles || [];
+  const totalCount = data?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / 5);
 
-  useEffect(() => {
-    const fetchArticles = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/articles?page=${currentPage}&limit=5`);
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Erro ao buscar artigos');
-        }
-        
-        setArticles(data.articles);
-        setPagination(data.pagination);
-      } catch (err: any) {
-        setError(err.message);
-        console.error('Erro ao buscar artigos:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchArticles();
-  }, [currentPage]);
-
-  const handleDeleteArticle = async (slug: string, id: string) => {
+  const handleDeleteArticle = async (slug: string) => {
     if (!confirm('Tem certeza que deseja excluir este artigo? Esta ação não pode ser desfeita.')) {
       return;
     }
     
-    try {      
-      const response = await fetch(`/api/articles/${slug}`, {
-        method: 'DELETE',
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao excluir artigo');
-      }
-            
-      setArticles(articles.filter(article => article.id !== id));
-            
-      setPagination(prev => ({
-        ...prev,
-        totalCount: prev.totalCount - 1,
-        totalPages: Math.ceil((prev.totalCount - 1) / prev.limit)
-      }));
+    try {
+      await deleteArticleMutation.mutateAsync(slug);
     } catch (err: any) {
       alert(`Erro ao excluir artigo: ${err.message}`);
       console.error('Erro ao excluir artigo:', err);
@@ -88,9 +48,9 @@ export function AdminArticlesContent() {
         </Link>
       </div>
       
-      {error && (
+      {error instanceof Error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
+          {error.message}
         </div>
       )}
       
@@ -140,7 +100,7 @@ export function AdminArticlesContent() {
                             {article.tags.map((tag) => (
                               <span 
                                 key={tag} 
-                                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                                className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 min-w-[10rem]"
                               >
                                 {tag}
                               </span>
@@ -170,10 +130,11 @@ export function AdminArticlesContent() {
                             Visualizar
                           </Link>
                           <button
-                            onClick={() => handleDeleteArticle(article.slug, article.id)}
+                            onClick={() => handleDeleteArticle(article.slug)}
                             className="text-red-600 dark:text-red-400 hover:text-red-900"
+                            disabled={deleteArticleMutation.isPending}
                           >
-                            Excluir
+                            {deleteArticleMutation.isPending && article.slug === deleteArticleMutation.variables ? 'Excluindo...' : 'Excluir'}
                           </button>
                         </div>
                       </td>
@@ -187,8 +148,8 @@ export function AdminArticlesContent() {
       )}      
       
       <Pagination 
-        currentPage={pagination.page} 
-        totalPages={pagination.totalPages} 
+        currentPage={currentPage} 
+        totalPages={totalPages} 
       />
     </div>
   );

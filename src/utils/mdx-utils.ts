@@ -207,9 +207,8 @@ export function parseCodeBlockMetastring(metastring: string = ''): Record<string
           metadata.filename = tokens[1];
         }
       }
-    }
+    }    
     
-    console.log('Metadados extraídos:', metadata, 'de metastring:', metastring);
     return metadata;
   } catch (error) {
     console.error('Erro ao processar metastring:', error);

@@ -6,6 +6,7 @@ import { Particles } from '@/components/Particles'
 
 import '@/styles/tailwind.css'
 import '@/styles/globals.css'
+import { montserrat } from './fonts'
 
 export const metadata: Metadata = {
   title: {
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
       'Walter S. A. Souza - Desenvolvedor Full Stack',
   },
   description:
-    "I'm Spencer, a software designer and entrepreneur based in New York City. I'm the founder and CEO of Planetaria, where we develop technologies that empower regular people to explore space on their own terms.",
+    "Sou Walter Souza, desenvolvedor full-stack e criador da Up Web Studio, minha marca pessoal para atuar como freelancer em projetos digitais.",
   alternates: {
     types: {
       'application/rss+xml': `${process.env.NEXT_PUBLIC_SITE_URL}/feed.xml`,
@@ -29,7 +30,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className="h-full antialiased" suppressHydrationWarning>
-      <body className="flex h-full">
+      <body className={`flex h-full ${montserrat.variable}`}>
         <Providers>
           <div className="fixed inset-0 -z-10">
             <Particles

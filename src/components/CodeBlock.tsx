@@ -1,6 +1,6 @@
 'use client';
 
-import { Code } from './Code';
+import Code from './Code';
 import { parseCodeBlockMetastring } from '@/utils/mdx-utils';
 
 interface CodeBlockProps {

@@ -1,6 +1,6 @@
 import Image, { type ImageProps } from 'next/image'
 import { type MDXComponents } from 'mdx/types'
-import { Code } from '@/components/Code'
+import Code from '@/components/Code'
 import { CodeBlock } from '@/components/CodeBlock'
 
 export function useMDXComponents(components: MDXComponents) {
