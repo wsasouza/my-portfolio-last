@@ -1,51 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { Pagination } from './Pagination';
-import { ProjectWithId } from '@/types/projects';
-import { PaginationInfo } from '@/types/pagination';
+import { useProjects } from '@/hooks/useProjects';
+import { useDeleteProject } from '@/hooks/useProjectMutations';
 
 export function AdminProjectsContent() {
-  const [projects, setProjects] = useState<ProjectWithId[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    page: 1,
-    limit: 6,
-    totalCount: 0,
-    totalPages: 1,
-    hasMore: false
-  });
-  
   const searchParams = useSearchParams();
   const currentPage = parseInt(searchParams.get('pagina') || '1', 10);
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/projects?page=${currentPage}&limit=6`);
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Erro ao buscar projetos');
-        }
-        
-        setProjects(data.projects);
-        setPagination(data.pagination);
-      } catch (err: any) {
-        setError(err.message);
-        console.error('Erro ao buscar projetos:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchProjects();
-  }, [currentPage]);
+  
+  const { data, isLoading, error } = useProjects({
+    page: currentPage,
+    limit: 6
+  });
+  
+  const deleteProjectMutation = useDeleteProject();
+  
+  const projects = data?.projects || [];
+  const totalCount = data?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / 6);
 
   const handleDeleteProject = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.')) {
@@ -53,23 +28,7 @@ export function AdminProjectsContent() {
     }
     
     try {
-      const response = await fetch(`/api/projects/${id}`, {
-        method: 'DELETE',
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao excluir projeto');
-      }      
-      
-      setProjects(projects.filter(project => project.id !== id));      
-      
-      setPagination(prev => ({
-        ...prev,
-        totalCount: prev.totalCount - 1,
-        totalPages: Math.ceil((prev.totalCount - 1) / prev.limit)
-      }));
+      await deleteProjectMutation.mutateAsync(id);
     } catch (err: any) {
       alert(`Erro ao excluir projeto: ${err.message}`);
       console.error('Erro ao excluir projeto:', err);
@@ -88,9 +47,9 @@ export function AdminProjectsContent() {
         </Link>
       </div>
       
-      {error && (
+      {error instanceof Error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
+          {error.message}
         </div>
       )}
       
@@ -193,8 +152,9 @@ export function AdminProjectsContent() {
                           <button
                             onClick={() => handleDeleteProject(project.id)}
                             className="text-red-600 dark:text-red-400 hover:text-red-900"
+                            disabled={deleteProjectMutation.isPending}
                           >
-                            Excluir
+                            {deleteProjectMutation.isPending && project.id === deleteProjectMutation.variables ? 'Excluindo...' : 'Excluir'}
                           </button>
                         </div>
                       </td>
@@ -208,8 +168,8 @@ export function AdminProjectsContent() {
       )}      
       
       <Pagination 
-        currentPage={pagination.page} 
-        totalPages={pagination.totalPages} 
+        currentPage={currentPage} 
+        totalPages={totalPages} 
       />
     </div>
   );

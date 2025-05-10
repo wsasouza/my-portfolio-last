@@ -65,7 +65,7 @@ function extractTextFromReactChildren(children: any): string {
   return '';
 }
 
-export function Code(props: CodeProps) {
+export default function Code(props: CodeProps) {
   const { children, className, language, filename, highlight, value, tokens } = props;
   const textRef = useRef<HTMLDivElement>(null);
   const [isCopied, setIsCopied] = useState(false);

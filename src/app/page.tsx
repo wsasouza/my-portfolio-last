@@ -21,9 +21,10 @@ import image2 from '@/images/photos/image-2.jpg'
 import image3 from '@/images/photos/image-3.jpg'
 import image4 from '@/images/photos/image-4.jpg'
 import image5 from '@/images/photos/image-5.jpg'
-import { type ArticleWithSlug, getPaginatedArticles } from '@/lib/articles'
+import { type ArticleWithSlug } from '@/lib/articles'
 import { formatDate } from '@/lib/formatDate'
 import { info } from '@/utils/info'
+import RecentArticles from '@/components/RecentArticles'
 
 function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -267,9 +268,7 @@ function Photos() {
   )
 }
 
-export default async function Home() {
-  const { articles } = await getPaginatedArticles(1, 4);
-
+export default function Home() {
   return (
     <>
       <Container className="mt-9">
@@ -308,16 +307,7 @@ export default async function Home() {
       <Container className="mt-24 md:mt-28">
         <div className="mx-auto grid max-w-xl grid-cols-1 gap-y-20 lg:max-w-none lg:grid-cols-2">
           <div className="flex flex-col gap-16">
-            {articles.map((article) => (
-              <Article key={article.slug} article={article} />
-            ))}
-            {articles.length > 0 && (
-              <div className="flex justify-center">
-                <Button href="/artigos" variant="secondary">
-                  Ver todos os artigos
-                </Button>
-              </div>
-            )}
+            <RecentArticles />
           </div>
           <div className="space-y-10 lg:pl-16 xl:pl-24">
             <Newsletter />

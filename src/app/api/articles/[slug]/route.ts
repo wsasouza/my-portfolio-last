@@ -7,7 +7,14 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   try {
-    const { slug } = params;    
+    const { slug } = params;
+    
+    if (!slug) {
+      return NextResponse.json(
+        { error: 'Slug não fornecido' },
+        { status: 400 }
+      );
+    }
     
     const articlesQuery = await db.collection('articles')
       .where('slug', '==', slug)
@@ -22,16 +29,17 @@ export async function GET(
     }
     
     const articleDoc = articlesQuery.docs[0];
+    
     const article = {
-      id: articleDoc.id,       
+      id: articleDoc.id,
       ...articleDoc.data(),
     };
     
     return NextResponse.json({ article });
   } catch (error) {
-    console.error('Erro ao buscar artigo:', error);
+    console.error('Erro ao buscar artigo do Firestore:', error);
     return NextResponse.json(
-      { error: 'Falha ao buscar artigo' },
+      { error: 'Erro ao buscar artigo' },
       { status: 500 }
     );
   }

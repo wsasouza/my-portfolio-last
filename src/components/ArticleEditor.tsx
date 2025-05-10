@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import slugify from 'slugify';
 
-import useFirebaseStorage from '@/hooks/useFirebaseStorage';
+import { useCreateArticle, useUpdateArticle } from '@/hooks/useArticleMutations';
+import { useUploadFile } from '@/hooks/useStorageMutations';
 import { insertImageInEditor } from '@/utils/image-editor';
+import ImagePreview from './ImagePreview';
 
 interface ArticleEditorProps {
   article?: {
@@ -43,13 +45,20 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
   const [content, setContent] = useState(article?.content || '');
   const [tagsInput, setTagsInput] = useState(article?.tags?.join(', ') || '');
   const [images, setImages] = useState<File[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [existingImages, setExistingImages] = useState<Record<string, string>>(article?.imageUrls || {});  
   const [imageObjectURLs, setImageObjectURLs] = useState<string[]>([]);  
-  const { uploadImage, uploadState } = useFirebaseStorage();
+  const [isUploading, setIsUploading] = useState(false);
+  const uploadFileMutation = useUploadFile();
   const contentTextAreaRef = useRef<HTMLTextAreaElement>(null);
+  const [previewImage, setPreviewImage] = useState<{file: File, url: string} | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  
+  const createArticleMutation = useCreateArticle();
+  const updateArticleMutation = useUpdateArticle();
+  
+  const isLoading = createArticleMutation.isPending || updateArticleMutation.isPending || isUploading;
   
   useEffect(() => {
     if (article) {
@@ -63,21 +72,69 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
     }
   }, [article]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
     
-    const files = Array.from(e.target.files);    
+    setError('');
+    setUploadError(null);
     
-    files.forEach((file) => {      
-      if (!file.type.startsWith('image/')) {
-        console.warn(`Aviso: O arquivo ${file.name} não parece ser uma imagem válida (tipo: ${file.type})`);
-      }
-    });    
+    const files = Array.from(e.target.files);
+    console.log('Arquivos selecionados:', files.map(f => ({ name: f.name, type: f.type, size: f.size })));
     
-    const newImageURLs = files.map(file => URL.createObjectURL(file));
-    setImageObjectURLs(prev => [...prev, ...newImageURLs]);
+    // Verificar se são imagens válidas
+    const validFiles = files.filter(file => file.type.startsWith('image/'));
+    if (validFiles.length === 0) {
+      setError('Nenhum arquivo de imagem válido selecionado');
+      return;
+    }
     
-    setImages((prev) => [...prev, ...files]);
+    if (validFiles.length === 1) {
+      // Se for apenas uma imagem, mostrar a prévia
+      const file = validFiles[0];
+      console.log('Preparando prévia para:', file.name);
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewImage({ file, url: previewUrl });
+    } else {
+      // Se forem múltiplas imagens, adicionar à lista
+      console.log('Adicionando múltiplas imagens:', validFiles.length);
+      const newImageURLs = validFiles.map(file => URL.createObjectURL(file));
+      setImageObjectURLs(prev => [...prev, ...newImageURLs]);
+      setImages(prev => [...prev, ...validFiles]);
+    }
+  };
+
+  const handleImageUpload = async () => {
+    if (!previewImage) return;
+    
+    setIsUploading(true);
+    setError('');
+    setUploadError(null);
+    
+    try {
+      console.log('Iniciando upload da imagem:', previewImage.file.name);
+      const slug = slugify(title, { lower: true });
+      const result = await uploadFileMutation.mutateAsync({
+        file: previewImage.file,
+        folder: `articles/${slug}`
+      });
+      
+      console.log('Upload bem-sucedido, resultado:', result);
+      
+      // Adicionar a imagem à lista de imagens existentes
+      setExistingImages(prev => ({
+        ...prev,
+        [previewImage.file.name]: result.url
+      }));
+      
+      // Limpar a prévia
+      URL.revokeObjectURL(previewImage.url);
+      setPreviewImage(null);
+      setIsUploading(false);
+    } catch (error: any) {
+      console.error('Erro ao fazer upload da imagem:', error);
+      setUploadError(error.message || 'Falha ao fazer upload da imagem');
+      setIsUploading(false);
+    }
   };
 
   const removeImage = (index: number) => {    
@@ -103,24 +160,40 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
   const uploadImagesToFirebase = async () => {    
     const folderPath = article?.slug || slugify(title, { lower: true });
     
-    const imageUploadPromises = images.map(async (img) => {
-      try {        
-        const imageUrl = await uploadImage(img, `articles/${folderPath}`);        
-        return { name: img.name, url: imageUrl };
-      } catch (error) {
-        console.error(`Erro ao enviar imagem ${img.name}:`, error);
-        throw error;
-      }
-    });
+    // Se não houver imagens para upload, retornar objeto vazio
+    if (images.length === 0) {
+      return {};
+    }
     
-    const uploadedImageResults = await Promise.all(imageUploadPromises);    
+    setIsUploading(true);
     
-    const uploadedImagesMap: Record<string, string> = {};
-    uploadedImageResults.forEach(({ name, url }) => {
-      uploadedImagesMap[name] = url;
-    });
-    
-    return uploadedImagesMap;
+    try {
+      const imageUploadPromises = images.map(async (img) => {
+        try {        
+          const result = await uploadFileMutation.mutateAsync({
+            file: img,
+            folder: `articles/${folderPath}`
+          });        
+          return { name: img.name, url: result.url };
+        } catch (error) {
+          console.error(`Erro ao enviar imagem ${img.name}:`, error);
+          throw error;
+        }
+      });
+      
+      const uploadedImageResults = await Promise.all(imageUploadPromises);    
+      
+      const uploadedImagesMap: Record<string, string> = {};
+      uploadedImageResults.forEach(({ name, url }) => {
+        uploadedImagesMap[name] = url;
+      });
+      
+      setIsUploading(false);
+      return uploadedImagesMap;
+    } catch (error) {
+      setIsUploading(false);
+      throw error;
+    }
   };
 
   const parseTags = (tagsString: string): string[] => {
@@ -134,58 +207,54 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
 
   const saveArticle = async () => {
     try {
-      setIsLoading(true);
       setError('');
       
       if (!title || !description || !author || !date) {
         setError('Todos os campos são obrigatórios');
-        setIsLoading(false);
         return;
       }
       
       const slug = article?.slug || slugify(title, { lower: true });
       
-      const uploadedImagesMap = images.length > 0 ? await uploadImagesToFirebase() : {};      
+      // Upload das imagens e obtenção das URLs
+      const uploadedImagesMap = await uploadImagesToFirebase();      
       
-      const allImages = { ...existingImages, ...uploadedImagesMap };  
+      // Combinar imagens existentes com novas imagens
+      const finalImageUrls = { ...existingImages, ...uploadedImagesMap };
       
       const tags = parseTags(tagsInput);    
       
-      const articleData: ArticleData = {
-        title,
-        description,
-        author,
-        date,
-        slug,
-        content,
-        imageUrls: allImages,
-        tags: tags.length > 0 ? tags : undefined,
-      };      
-      
-      if (article?.id) {        
-        articleData.id = article.id;
-      } 
-
-      const response = await fetch(`/api/articles-client`, {
-        method: article ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(articleData),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao salvar artigo');
+      if (article?.id) {
+        await updateArticleMutation.mutateAsync({
+          id: article.id,
+          title,
+          description,
+          author,
+          date,
+          slug,
+          content,
+          tags: tags.length > 0 ? tags : undefined,
+          existingImages: finalImageUrls,
+          images
+        });
+      } else {
+        await createArticleMutation.mutateAsync({
+          title,
+          description,
+          author,
+          date,
+          slug,
+          content,
+          tags: tags.length > 0 ? tags : undefined,
+          existingImages: finalImageUrls,
+          images
+        });
       }
       
       router.push('/admin/gerenciar-artigos');
     } catch (err: any) {
       setError(err.message);
       console.error('Erro ao salvar artigo:', err);
-    } finally {
-      setIsLoading(false);
     }
   };
   
@@ -195,231 +264,287 @@ export default function ArticleEditor({ article = null }: ArticleEditorProps) {
     };
   }, [imageObjectURLs]);
  
-  const renderUploadProgress = (filename: string) => {
-    const state = uploadState[filename];
-    if (!state || !state.isUploading) return null;
+  const renderUploadProgress = () => {
+    if (!isUploading) return null;
     
     return (
-      <div className="text-xs mt-1">
-        <div className="h-1 w-full bg-gray-200 rounded overflow-hidden">
-          <div
-            className="h-full bg-blue-500"
-            style={{ width: `${state.progress}%` }}
-          />
+      <div className="mt-2">
+        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+          <div className="bg-blue-600 h-2.5 rounded-full w-full animate-pulse"></div>
         </div>
-        <span className="text-gray-500">{state.progress}%</span>
+        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+          Enviando imagem...
+        </p>
       </div>
     );
   };
-  
+
   const insertImageInContent = (filename: string, imageUrl: string) => {
-    const updatedContent = insertImageInEditor(
-      content,
-      filename,
-      imageUrl,
-      contentTextAreaRef.current
-    );
-    setContent(updatedContent);
-  };  
+    if (contentTextAreaRef.current) {
+      const textArea = contentTextAreaRef.current;
+      const updatedContent = insertImageInEditor(
+        content,
+        filename,
+        imageUrl,
+        textArea
+      );
+      setContent(updatedContent);
+    }
+  };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">
-        {article ? 'Editar Artigo' : 'Criar Novo Artigo'}
-      </h1>
-      
+    <div className="max-w-4xl mx-auto">
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}
       
-      <div className="grid gap-4 mb-6">
+      <div className="mb-4">
+        <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
+          Título
+        </label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+          placeholder="Título do artigo"
+          required
+        />
+      </div>
+      
+      <div className="mb-4">
+        <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
+          Descrição
+        </label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+          placeholder="Descrição do artigo"
+          rows={2}
+          required
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label className="block mb-2">Título</label>
+          <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
+            Autor
+          </label>
           <input
             type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700"
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+            placeholder="Nome do autor"
+            required
           />
         </div>
-        
         <div>
-          <label className="block mb-2">Descrição</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700"
-            rows={3}
-          />
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block mb-2">Autor</label>
-            <input
-              type="text"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700"
-            />
-          </div>
-          
-          <div>
-            <label className="block mb-2">Data</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700"
-            />
-          </div>
-        </div>
-        
-        <div>
-          <label className="block mb-2">Tags (separadas por vírgula)</label>
+          <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
+            Data
+          </label>
           <input
-            type="text"
-            value={tagsInput}
-            onChange={(e) => setTagsInput(e.target.value)}
-            placeholder="frontend, backend, javascript, etc."
-            className="w-full p-2 border rounded dark:bg-zinc-800 dark:border-zinc-700"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+            required
           />
-          <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-            Ex: frontend, backend, devops, typescript
-          </p>
-        </div>
-        
-        <div>
-          <label className="block mb-2">Imagens</label>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImageUpload}
-            multiple
-            accept="image/*"
-            className="mb-2 cursor-pointer bg-blue-500 text-white rounded-md px-3 py-1.5 hover:bg-blue-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
-          />          
-          
-          {Object.keys(existingImages).length > 0 && (
-            <div className="mt-4">
-              <h3 className="font-medium mb-2">Imagens existentes:</h3>
-              <div className="flex flex-wrap gap-4 mb-8">
-                {Object.entries(existingImages).map(([filename, url]) => (
-                  <div key={filename} className="relative">
-                    <div className="h-20 w-32 relative">
-                      <Image
-                        src={url}
-                        alt={filename}
-                        fill
-                        className="object-contain rounded bg-zinc-200 dark:bg-zinc-800"
-                      />
-                    </div>
-                    <div className="absolute flex space-x-1 -bottom-6 left-0 right-0">
-                      <button
-                        onClick={() => insertImageInContent(filename, url)}
-                        className="bg-green-500 text-white text-xs rounded px-1 py-0.5 hover:bg-green-600 cursor-pointer"
-                        title="Inserir como Markdown"
-                      >
-                        MD
-                      </button>                      
-                    </div>
-                    <button
-                      onClick={() => removeExistingImage(filename)}
-                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center cursor-pointer"
-                      title="Remover imagem"
-                    >
-                      &times;
-                    </button>
-                    <span className="text-xs mt-1 block truncate max-w-[80px]">{filename}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          
-          {images.length > 0 && (
-            <div className="mt-8">
-              <h3 className="font-medium mb-2">Novas imagens:</h3>
-              <div className="flex flex-wrap gap-2">
-                {images.map((img, idx) => (
-                  <div key={idx} className="relative">
-                    {/* Usar URL segura para preview */}
-                    <div className="h-20 w-20 relative">
-                      <Image
-                        src={imageObjectURLs[idx] || ''}
-                        alt={img.name}
-                        fill
-                        className="object-contain rounded"
-                        unoptimized
-                      />
-                    </div>
-                    {uploadState[img.name]?.url && (
-                      <div className="absolute flex space-x-1 -bottom-6 left-0 right-0">
-                        <button
-                          onClick={() => insertImageInContent(img.name, uploadState[img.name]?.url || '')}
-                          className="bg-green-500 text-white text-xs rounded px-1 py-0.5 hover:bg-green-600"
-                          title="Inserir como Markdown"
-                        >
-                          MD
-                        </button>                        
-                      </div>
-                    )}
-                    <button
-                      onClick={() => removeImage(idx)}
-                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center cursor-pointer"
-                      title="Remover imagem"
-                    >
-                      &times;
-                    </button>
-                    <span className="text-xs mt-1 block truncate max-w-[80px]">{img.name}</span>
-                    {renderUploadProgress(img.name)}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
       
+      <div className="mb-4">
+        <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
+          Tags (separadas por vírgula)
+        </label>
+        <input
+          type="text"
+          value={tagsInput}
+          onChange={(e) => setTagsInput(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+          placeholder="frontend, react, nextjs"
+        />
+      </div>
+      
       <div className="mb-6">
-        <label className="block mb-2">Conteúdo (MDX)</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-gray-700 dark:text-zinc-300 font-medium mb-2">
+              Imagens
+            </label>
+            <div className="flex items-center space-x-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+                multiple
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+                disabled={isUploading}
+              >
+                Selecionar Imagens
+              </button>
+            </div>
+            
+            {uploadError && (
+              <div className="mt-2 bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
+                {uploadError}
+              </div>
+            )}
+            
+            {previewImage && (
+              <div className="mt-4">
+                <ImagePreview 
+                  file={previewImage.file} 
+                  previewUrl={previewImage.url}
+                  maxWidth={500}
+                  maxHeight={500}
+                />
+                <div className="mt-4 flex justify-between">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      URL.revokeObjectURL(previewImage.url);
+                      setPreviewImage(null);
+                    }}
+                    className="px-4 py-2 bg-red-100 text-red-800 rounded-md hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
+                    disabled={isUploading}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleImageUpload}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed"
+                    disabled={isUploading}
+                  >
+                    {isUploading ? 'Enviando...' : 'Inserir Imagem'}
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {renderUploadProgress()}
+          </div>
+          
+          {/* Imagens para upload em lote */}
+          {images.length > 0 && (
+            <div className="mt-4">
+              <h3 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Imagens para upload em lote</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                Estas imagens serão enviadas quando você salvar o artigo.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {images.map((file, index) => (
+                  <div key={index} className="relative group">
+                    <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-100 dark:bg-zinc-800">
+                      <Image
+                        src={imageObjectURLs[index]}
+                        alt={file.name}
+                        width={200}
+                        height={200}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                    <div className="mt-1 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="text-xs text-red-600 dark:text-red-400 hover:underline"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">
+                      {file.name}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Imagens existentes */}
+        {Object.keys(existingImages).length > 0 && (
+          <div className="mt-6">
+            <h3 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Imagens existentes</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {Object.entries(existingImages).map(([filename, url]) => (
+                <div key={filename} className="relative group">
+                  <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-100 dark:bg-zinc-800">
+                    <Image
+                      src={url}
+                      alt={filename}
+                      width={200}
+                      height={200}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                  <div className="mt-1 flex justify-between items-center">
+                    <button
+                      type="button"
+                      onClick={() => insertImageInContent(filename, url)}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Inserir
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeExistingImage(filename)}
+                      className="text-xs text-red-600 dark:text-red-400 hover:underline"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">
+                    {filename}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <div className="mb-6">
+        <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
+          Conteúdo (Markdown)
+        </label>
         <textarea
           ref={contentTextAreaRef}
           value={content}
           onChange={handleContentChange}
-          className="w-full p-2 border rounded font-mono dark:bg-zinc-800 dark:border-zinc-700"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white font-mono"
+          placeholder="Conteúdo do artigo em Markdown"
           rows={15}
         />
-        
-        <div className="mt-4 text-sm text-zinc-500">
-          <p>Dicas:</p>
-          <ul className="list-disc pl-5">            
-            <li>Use o botão <strong>MD</strong> para inserir imagens como Markdown</li>           
-            <li>Use <code>{'[Texto do link](https://exemplo.com)'}</code> para inserir links</li>            
-            <li>Use ## para títulos de seção</li>
-            <li>Use **texto** para negrito</li>
-            <li>Use *texto* para itálico</li>
-          </ul>
-        </div>
       </div>
       
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-4">
         <button
+          type="button"
           onClick={() => router.push('/admin/gerenciar-artigos')}
-          className="px-4 py-2 mr-2 bg-zinc-200 rounded dark:bg-zinc-700 cursor-pointer"
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
           disabled={isLoading}
         >
           Cancelar
         </button>
         <button
+          type="button"
           onClick={saveArticle}
-          className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-blue-300 cursor-pointer"
+          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed"
           disabled={isLoading}
         >
-          {isLoading ? 'Salvando...' : article ? 'Atualizar' : 'Publicar'} Artigo
+          {isLoading ? 'Salvando...' : article ? 'Atualizar' : 'Publicar'}
         </button>
       </div>
     </div>

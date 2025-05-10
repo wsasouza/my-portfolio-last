@@ -4,7 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import slugify from 'slugify';
-import useFirebaseStorage from '@/hooks/useFirebaseStorage';
+import { useCreateProject, useUpdateProject } from '@/hooks/useProjectMutations';
+import { useUploadFile } from '@/hooks/useStorageMutations';
+import ImagePreview from './ImagePreview';
 
 interface ProjectEditorProps {
   project?: {
@@ -17,15 +19,6 @@ interface ProjectEditorProps {
   } | null;
 }
 
-interface ProjectData {
-  name: string;
-  description: string;
-  link: { href: string; label: string };
-  logo?: string;
-  tags?: string[];
-  id?: string;
-}
-
 export default function ProjectEditor({ project = null }: ProjectEditorProps) {
   const router = useRouter();
   const [name, setName] = useState(project?.name || '');
@@ -35,10 +28,15 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
   const [tagsInput, setTagsInput] = useState(project?.tags?.join(', ') || '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(project?.logo || null);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { uploadImage } = useFirebaseStorage();
+  
+  const createProjectMutation = useCreateProject();
+  const updateProjectMutation = useUpdateProject();
+  const uploadFileMutation = useUploadFile();
+  
+  const isLoading = createProjectMutation.isPending || updateProjectMutation.isPending || isUploading;
 
   useEffect(() => {
     if (project) {
@@ -69,9 +67,15 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
     if (!logoFile) return project?.logo || null;
     
     try {
-      const logoUrl = await uploadImage(logoFile, `projects/${slug}`);
-      return logoUrl;
+      setIsUploading(true);
+      const result = await uploadFileMutation.mutateAsync({
+        file: logoFile,
+        folder: `projects/${slug}`
+      });
+      setIsUploading(false);
+      return result.url;
     } catch (error) {
+      setIsUploading(false);
       console.error('Erro ao fazer upload do logo:', error);
       throw new Error('Falha ao fazer upload do logo');
     }
@@ -88,12 +92,10 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
 
   const saveProject = async () => {
     try {
-      setIsLoading(true);
       setError('');
       
       if (!name || !description) {
         setError('Nome e descrição são obrigatórios');
-        setIsLoading(false);
         return;
       }
       
@@ -103,41 +105,35 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
       
       const tags = parseTags(tagsInput);      
       
-      const projectData: ProjectData = {
-        name,
-        description,
-        link: {
-          href: linkHref,
-          label: linkLabel || linkHref
-        },
-        logo: logoUrl || undefined,
-        tags: tags.length > 0 ? tags : undefined,
-      };      
-      
       if (project?.id) {
-        projectData.id = project.id;
-      }      
-      
-      const response = await fetch(`/api/projects`, {
-        method: project ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(projectData),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao salvar projeto');
+        await updateProjectMutation.mutateAsync({
+          id: project.id,
+          name,
+          description,
+          link: {
+            href: linkHref,
+            label: linkLabel || linkHref
+          },
+          logo: logoUrl || undefined,
+          tags: tags.length > 0 ? tags : undefined,
+        });
+      } else {
+        await createProjectMutation.mutateAsync({
+          name,
+          description,
+          link: {
+            href: linkHref,
+            label: linkLabel || linkHref
+          },
+          logo: logoUrl || undefined,
+          tags: tags.length > 0 ? tags : undefined,
+        });
       }
       
       router.push('/admin/gerenciar-projetos');
     } catch (err: any) {
       setError(err.message);
       console.error('Erro ao salvar projeto:', err);
-    } finally {
-      setIsLoading(false);
     }
   };
   
@@ -148,6 +144,21 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
       }
     };
   }, [logoPreview, logoFile]);
+
+  const renderUploadProgress = () => {
+    if (!isUploading) return null;
+    
+    return (
+      <div className="mt-2">
+        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+          <div className="bg-blue-600 h-2.5 rounded-full w-full animate-pulse"></div>
+        </div>
+        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+          Processando e enviando imagem...
+        </p>
+      </div>
+    );
+  };
 
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6">
@@ -234,7 +245,7 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
           Logo do Projeto
         </label>
         <div className="flex items-center space-x-4">
-          {logoPreview && (
+          {logoPreview && !logoFile && (
             <div className="relative w-36 h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-zinc-700 p-2">
               <Image
                 src={logoPreview}
@@ -249,37 +260,61 @@ export default function ProjectEditor({ project = null }: ProjectEditorProps) {
             accept="image/*"
             ref={fileInputRef}
             onChange={handleLogoChange}
-            className="block w-full text-sm text-gray-500 dark:text-zinc-400
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-blue-50 file:text-blue-700
-              dark:file:bg-blue-900 dark:file:text-blue-200
-              hover:file:bg-blue-100 dark:hover:file:bg-blue-800"
+            className="hidden"
           />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+            disabled={isUploading}
+          >
+            {logoPreview ? 'Trocar Logo' : 'Selecionar Logo'}
+          </button>
+          {logoPreview && (
+            <button
+              type="button"
+              onClick={() => {
+                setLogoPreview(null);
+                setLogoFile(null);
+              }}
+              className="px-4 py-2 bg-red-100 text-red-800 rounded-md hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
+              disabled={isUploading}
+            >
+              Remover Logo
+            </button>
+          )}
         </div>
-        <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-          SVG, PNG ou JPG 
-        </p>
+        
+        {logoFile && logoPreview && (
+          <div className="mt-4">
+            <ImagePreview 
+              file={logoFile} 
+              previewUrl={logoPreview}
+              maxWidth={500}
+              maxHeight={500}
+            />
+          </div>
+        )}
+        
+        {renderUploadProgress()}
       </div>
       
-      <div className="flex justify-end">
+      <div className="flex justify-end space-x-4">
         <button
           type="button"
           onClick={() => router.push('/admin/gerenciar-projetos')}
-          className="px-4 py-2 text-gray-700 dark:text-zinc-300 mr-2"
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+          disabled={isLoading}
         >
           Cancelar
         </button>
         <button
           type="button"
           onClick={saveProject}
+          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed"
           disabled={isLoading}
-          className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 ${
-            isLoading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
         >
-          {isLoading ? 'Salvando...' : project ? 'Atualizar Projeto' : 'Criar Projeto'}
+          {isLoading ? 'Salvando...' : project ? 'Atualizar' : 'Criar'}
         </button>
       </div>
     </div>

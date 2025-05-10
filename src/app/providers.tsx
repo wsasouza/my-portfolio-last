@@ -3,6 +3,7 @@
 import { createContext, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { ThemeProvider, useTheme } from 'next-themes'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ShikiProvider from '@/components/ShikiProvider'
 
 function usePrevious<T>(value: T) {
@@ -43,15 +44,19 @@ export const AppContext = createContext<{ previousPathname?: string }>({})
 
 export function Providers({ children }: { children: React.ReactNode }) {
   let pathname = usePathname()
-  let previousPathname = usePrevious(pathname)
+  let previousPathname = usePrevious(pathname)  
+  
+  const queryClient = useRef(new QueryClient())
 
   return (
     <AppContext.Provider value={{ previousPathname }}>
       <ThemeProvider attribute="class" disableTransitionOnChange>
         <ThemeWatcher />
-        <ShikiProvider>
-          {children}
-        </ShikiProvider>
+        <QueryClientProvider client={queryClient.current}>
+          <ShikiProvider>
+            {children}
+          </ShikiProvider>
+        </QueryClientProvider>
       </ThemeProvider>
     </AppContext.Provider>
   )
